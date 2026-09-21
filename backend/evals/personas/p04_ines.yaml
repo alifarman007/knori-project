@@ -1,0 +1,219 @@
+# Eval persona 04 — venting, and one thing said once.
+#
+# Sarcasm is extracted at low strength, so even two occasions never reach the bar
+# for a pattern (R8). A single mention is refused earlier, by the interpreter.
+name: p04_ines
+summary: One real pattern; a fortnight of venting and one one-off that must stay quiet.
+display_name: Ines Duarte
+preferred_name: Ines
+email: p04-ines@knori.eval
+password: knori-eval-1234
+timezone: Europe/Lisbon
+now: 2026-09-21T10:00:00Z
+
+settings:
+  max_recognitions_per_day: 2
+
+conversations:
+  - id: c1
+    title: Monday
+    started: 2026-09-14T17:20:00Z
+    messages:
+      - id: i1
+        role: user
+        text: >-
+          another sprint planning where I said nothing for fifty minutes and then sent
+          my actual opinion in a message afterwards
+        signals:
+          - quote: I said nothing for fifty minutes and then sent my actual opinion in a message afterwards
+            content: They stayed quiet in a meeting and gave their view in writing afterwards.
+            topic: work.collaboration
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, meeting]
+      - role: assistant
+        text: >-
+          Thanks for telling me. Was the message easier than the room?
+      - id: i3
+        role: user
+        after: 5
+        text: >-
+          much. I can read it back before I send it. in the room it is gone as soon as
+          I have said it
+      - role: assistant
+        text: Understood. I will keep that as one occasion.
+      - id: i5
+        role: user
+        after: 6
+        text: >-
+          oh and the coffee machine is broken again, truly a world class engineering
+          organisation
+        signals:
+          - quote: truly a world class engineering organisation
+            content: They spoke sarcastically about their workplace after an annoyance.
+            topic: emotions.frustration
+            kind: emotion
+            subject: self
+            polarity: -1
+            strength: 0.3
+            tags: [work]
+      - role: assistant
+        text: Broken coffee machine. Noted, lightly.
+      - id: i7
+        role: user
+        after: 4
+        text: >-
+          I am a backend engineer at a logistics company, about forty of us
+        memories:
+          - quote: I am a backend engineer at a logistics company
+            statement: They work as a backend engineer at a logistics company.
+            kind: fact
+            key: fact.work
+      - role: assistant
+        text: Noted. Have a good evening, Ines.
+
+  - id: c2
+    title: Thursday
+    started: 2026-09-17T18:05:00Z
+    messages:
+      - id: i9
+        role: user
+        text: >-
+          design review today. I had the whole argument ready and wrote it up after
+          instead of saying it
+        signals:
+          - quote: I had the whole argument ready and wrote it up after instead of saying it
+            content: They prepared a view and wrote it afterwards rather than speaking it in the review.
+            topic: work.collaboration
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, meeting]
+      - role: assistant
+        text: >-
+          Thank you. That is a second time, on a different day.
+      - id: i11
+        role: user
+        after: 5
+        text: >-
+          and the coffee machine is still broken, which is obviously the most important
+          problem in the building
+        signals:
+          - quote: which is obviously the most important problem in the building
+            content: They spoke sarcastically about priorities at work.
+            topic: emotions.frustration
+            kind: emotion
+            subject: self
+            polarity: -1
+            strength: 0.3
+            tags: [work]
+      - role: assistant
+        text: Still broken. Still noted lightly.
+      - id: i13
+        role: user
+        after: 6
+        text: >-
+          I signed up for a pottery class starting in november, first time I have
+          booked anything like that
+        signals:
+          - quote: I signed up for a pottery class starting in november
+            content: They booked a pottery class starting in November.
+            topic: creativity.making
+            kind: situation
+            subject: self
+            polarity: 1
+            strength: 1.0
+            tags: []
+      - role: assistant
+        text: >-
+          One booking is one booking. I will keep it without making anything of it.
+
+  - id: c3
+    title: Sunday
+    started: 2026-09-20T15:50:00Z
+    messages:
+      - id: i15
+        role: user
+        text: >-
+          thinking about monday. there is a roadmap meeting and I already know I will
+          write the follow up rather than talk
+        signals:
+          - quote: I already know I will write the follow up rather than talk
+            content: They expect to put their view in writing after a meeting rather than speak it.
+            topic: work.collaboration
+            kind: reflection
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, meeting]
+      - role: assistant
+        text: >-
+          Thanks. That is the third separate occasion you have described.
+      - id: i17
+        role: user
+        after: 5
+        text: >-
+          it is not nerves exactly. I just want to get it right and writing lets me
+      - role: assistant
+        text: >-
+          Understood, and I will use your wording rather than mine if this ever comes
+          back to you.
+      - id: i19
+        role: user
+        after: 4
+        text: right. early night. big week
+      - role: assistant
+        text: Good luck with Monday, Ines.
+
+claims:
+  - id: k1
+    kind: pattern
+    topic: work.collaboration
+    statement: The user puts their view in writing after a meeting rather than speaking it in the room.
+    rationale: Three occasions on three separate days, each about the same choice.
+    evidence: [i1, i9, i15]
+    model_confidence: 0.86
+    card:
+      title: The view arrives in writing
+      body: >-
+        You seem to save what you think for after the meeting, and to put it in
+        writing where you can read it back first. It has come up three times, on
+        three different days.
+      explanation: >-
+        Three things you said, on three separate days, all about the same choice
+        between the room and the written follow up. Enough to raise, not to be sure.
+
+  # Proposed from two days of venting about a coffee machine. Both signals are weak,
+  # so conf-v1 never reaches the bar for a pattern and R8 stops it.
+  - id: k2
+    kind: pattern
+    topic: emotions.frustration
+    statement: The user is frustrated by how their workplace is run.
+    rationale: Two sarcastic remarks about the office on different days.
+    evidence: [i5, i11]
+    model_confidence: 0.64
+
+declined:
+  - about: a claim that the user is taking up creative hobbies
+    reason: single_occurrence
+    evidence: [i13]
+
+expected:
+  - id: g1
+    gist: >-
+      The user puts their view in writing after a meeting rather than speaking it
+      in the room.
+    evidence: [i1, i9, i15]
+
+traps:
+  - id: t1
+    kind: sarcasm
+    about: Two days of joking about a broken coffee machine.
+    messages: [i5, i11]
+  - id: t2
+    kind: single_mention
+    about: Booking a pottery class, said once.
+    messages: [i13]

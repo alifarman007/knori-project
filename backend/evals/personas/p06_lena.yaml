@@ -1,0 +1,185 @@
+# Eval persona 06 — a rejection has to hold.
+#
+# This one runs the engine twice. Phase 1 produces a card and the user rejects it.
+# Phase 2 brings fresh evidence for the same claim, and the claim must not come
+# back: the rejected statement is in the do-not-repropose list the interpreter
+# reads, and R7 is behind that if the interpreter ignores it (plan §4.5, §4.6).
+name: p06_lena
+summary: A card, a rejection, and fresh evidence afterwards that must not revive it.
+display_name: Lena Fischer
+preferred_name: Lena
+email: p06-lena@knori.eval
+password: knori-eval-1234
+timezone: Europe/Berlin
+now: 2026-09-21T10:00:00Z
+
+settings:
+  max_recognitions_per_day: 2
+
+conversations:
+  - id: c1
+    title: Monday
+    phase: 1
+    started: 2026-09-14T16:40:00Z
+    messages:
+      - id: l1
+        role: user
+        text: >-
+          I pulled out of the panel at the conference. told them yesterday I would
+          rather not do it
+        signals:
+          - quote: I pulled out of the panel at the conference
+            content: They withdrew from a conference panel.
+            topic: work.recognition
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work]
+      - role: assistant
+        text: What went into that?
+      - id: l3
+        role: user
+        after: 5
+        text: >-
+          the format. four people on stools answering questions nobody prepared. I
+          would rather write the thing and let people read it
+      - role: assistant
+        text: >-
+          Understood. I will keep it as what happened, not as a conclusion about you.
+      - id: l5
+        role: user
+        after: 6
+        text: >-
+          I am a researcher, mostly materials science, twelve years in
+        memories:
+          - quote: I am a researcher, mostly materials science
+            statement: They work as a materials science researcher.
+            kind: fact
+            key: fact.work
+      - role: assistant
+        text: Noted. Have a good evening, Lena.
+
+  - id: c2
+    title: Wednesday
+    phase: 1
+    started: 2026-09-16T18:25:00Z
+    messages:
+      - id: l7
+        role: user
+        text: >-
+          said no to the departmental talk as well. that is two in a week
+        signals:
+          - quote: said no to the departmental talk as well
+            content: They declined an invitation to give a departmental talk.
+            topic: work.recognition
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work]
+      - role: assistant
+        text: >-
+          Thanks for telling me. That is a second occasion, on a second day.
+      - id: l9
+        role: user
+        after: 5
+        text: >-
+          I have a paper to finish and a talk is a week of preparation for forty
+          minutes
+      - role: assistant
+        text: Understood. Good luck with the paper.
+
+  - id: c3
+    title: Saturday
+    phase: 2
+    started: 2026-09-19T10:15:00Z
+    messages:
+      - id: l11
+        role: user
+        text: >-
+          turned down a podcast invitation this morning, which I suppose is three
+        signals:
+          - quote: turned down a podcast invitation this morning
+            content: They declined an invitation to appear on a podcast.
+            topic: work.recognition
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work]
+      - role: assistant
+        text: >-
+          You told me the earlier reading of this was wrong, so I am keeping this as
+          what happened and nothing more.
+      - id: l13
+        role: user
+        after: 5
+        text: >-
+          right, because it is not about being seen. it is that speaking costs a week
+          and writing costs an afternoon
+        signals:
+          - quote: speaking costs a week and writing costs an afternoon
+            content: They weigh the preparation time of speaking against writing.
+            topic: work.recognition
+            kind: reflection
+            subject: self
+            polarity: 0
+            strength: 1.0
+            tags: [work]
+      - role: assistant
+        text: >-
+          That is your wording and I will use it rather than mine.
+      - id: l15
+        role: user
+        after: 4
+        text: >-
+          good. the paper went off last night by the way
+      - role: assistant
+        text: Congratulations. Enjoy the weekend.
+
+claims:
+  - id: k1
+    kind: pattern
+    topic: work.recognition
+    statement: The user avoids speaking in public about their work.
+    rationale: Two invitations turned down on two separate days.
+    evidence: [l1, l7]
+    model_confidence: 0.79
+    card:
+      title: Turning down the stage
+      body: >-
+        It looks like invitations to speak about your work are the ones you say no
+        to. Two came up this week and both were declined.
+      explanation: >-
+        Two things you said on two different days, both about declining an
+        invitation. That is enough to raise and not enough to be sure, so correct it
+        if the reason is different from what this assumes.
+
+  # Phase 2. Same claim, fresh evidence, after the user said it was wrong. The
+  # interpreter reads the do-not-repropose list and declines it; R7 is behind that.
+  - id: k1_again
+    kind: pattern
+    topic: work.recognition
+    statement: The user avoids speaking in public about their work.
+    rationale: A third invitation declined.
+    evidence: [l11, l13]
+    model_confidence: 0.82
+
+feedback:
+  - claim: k1
+    action: reject
+    reason_code: not_true
+    phase: 1
+
+expected:
+  - id: g1
+    gist: >-
+      The user turns down invitations to speak in public about their work.
+    evidence: [l1, l7]
+
+traps:
+  - id: t1
+    kind: prior_rejection
+    about: The same claim again after the user rejected it, on new evidence.
+    messages: [l11, l13]

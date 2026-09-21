@@ -1,0 +1,186 @@
+# Eval persona 05 — something they already told us.
+#
+# The user states a routine outright, so it goes on the memory page as a fact. An
+# interpreter that later "notices" the same thing is repeating them back, and R2
+# declines it as already_known. A different, genuinely inferred pattern from the
+# same conversations still has to come through.
+name: p05_kwame
+summary: One inferred pattern; one claim that only repeats a fact already on the memory page.
+display_name: Kwame Boateng
+preferred_name: Kwame
+email: p05-kwame@knori.eval
+password: knori-eval-1234
+timezone: Europe/London
+now: 2026-09-21T10:00:00Z
+
+settings:
+  max_recognitions_per_day: 2
+
+conversations:
+  - id: c1
+    title: Tuesday
+    started: 2026-09-15T20:15:00Z
+    messages:
+      - id: w1
+        role: user
+        text: >-
+          back from the club run. I run on tuesday and thursday evenings, always have
+        signals:
+          - quote: I run on tuesday and thursday evenings, always have
+            content: They run on Tuesday and Thursday evenings.
+            topic: health.movement
+            kind: behavior
+            subject: self
+            polarity: 1
+            strength: 1.0
+            tags: [evening]
+        memories:
+          - quote: I run on tuesday and thursday evenings
+            statement: The user runs on Tuesday and Thursday evenings.
+            kind: routine
+            key: routine.running
+      - role: assistant
+        text: >-
+          Noted, and it will be on your memory page as something you told me rather
+          than something I worked out.
+      - id: w3
+        role: user
+        after: 5
+        text: >-
+          good. the bit I have not worked out is why I book the physio, the dentist and
+          the car service all in the same week every time
+        signals:
+          - quote: I book the physio, the dentist and the car service all in the same week
+            content: They schedule several separate appointments into one week.
+            topic: routines.planning
+            kind: behavior
+            subject: self
+            polarity: 0
+            strength: 1.0
+            tags: [planning]
+      - role: assistant
+        text: All in one week. Is that deliberate?
+      - id: w5
+        role: user
+        after: 5
+        text: >-
+          not consciously. I think I put them off until there is a pile and then I do
+          the pile
+      - role: assistant
+        text: >-
+          Thanks. One occasion so far; I will see whether anything else lines up.
+
+  - id: c2
+    title: Thursday
+    started: 2026-09-17T21:00:00Z
+    messages:
+      - id: w7
+        role: user
+        text: >-
+          ran tonight as usual. legs fine, head better
+      - role: assistant
+        text: Good. Anything else from the day?
+      - id: w9
+        role: user
+        after: 6
+        text: >-
+          I did four months of admin in one afternoon. tax return, insurance renewal,
+          the passport form, all of it
+        signals:
+          - quote: I did four months of admin in one afternoon
+            content: They cleared several months of administrative tasks in a single sitting.
+            topic: routines.planning
+            kind: behavior
+            subject: self
+            polarity: 0
+            strength: 1.0
+            tags: [planning]
+      - role: assistant
+        text: >-
+          That is the second time you have described doing a batch of small things at
+          once, on a different day.
+      - id: w11
+        role: user
+        after: 5
+        text: >-
+          it is the only way any of it gets done. one at a time I never start
+      - role: assistant
+        text: Understood. Noted as your words.
+
+  - id: c3
+    title: Sunday
+    started: 2026-09-20T12:30:00Z
+    messages:
+      - id: w13
+        role: user
+        text: >-
+          spent the morning replying to every email I had been ignoring since august,
+          about thirty of them
+        signals:
+          - quote: replying to every email I had been ignoring since august
+            content: They answered a long backlog of messages in one sitting.
+            topic: routines.planning
+            kind: behavior
+            subject: self
+            polarity: 0
+            strength: 1.0
+            tags: [weekend, planning]
+      - role: assistant
+        text: >-
+          Thirty at once. That is a third occasion, on a third day.
+      - id: w15
+        role: user
+        after: 5
+        text: >-
+          and now I will not look at the inbox for a fortnight, which is the part I am
+          less proud of
+      - role: assistant
+        text: >-
+          I will keep both halves of that as you said them.
+      - id: w17
+        role: user
+        after: 4
+        text: right. run tomorrow. well, tuesday
+      - role: assistant
+        text: Tuesday it is. Enjoy the rest of Sunday.
+
+claims:
+  - id: k1
+    kind: pattern
+    topic: routines.planning
+    statement: The user lets small tasks pile up and then clears them in one sitting.
+    rationale: Three occasions across three days, each a batch rather than a single task.
+    evidence: [w3, w9, w13]
+    model_confidence: 0.85
+    card:
+      title: Small tasks go in one batch
+      body: >-
+        You seem to leave the little jobs until there are enough of them to be worth
+        a single sitting, and then clear the lot at once. It has come up on three
+        different days.
+      explanation: >-
+        Three things you said, on three separate days, each about doing a pile of
+        small things together rather than one at a time. Enough to raise.
+
+  # Word for word what the user already put on their memory page. R2 declines it:
+  # repeating a fact back is not a Recognition.
+  - id: k2
+    kind: pattern
+    topic: health.movement
+    statement: The user runs on Tuesday and Thursday evenings.
+    rationale: Stated outright, and the routine held through the week.
+    evidence: [w1]
+    model_confidence: 0.90
+
+expected:
+  - id: g1
+    gist: >-
+      The user lets small tasks pile up and then clears the whole batch in one
+      sitting.
+    evidence: [w3, w9, w13]
+
+traps:
+  - id: t1
+    kind: already_known
+    about: Running on Tuesday and Thursday evenings, which is already an explicit fact.
+    messages: [w1]

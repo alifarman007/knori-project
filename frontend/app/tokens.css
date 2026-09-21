@@ -1,0 +1,167 @@
+/* ---------------------------------------------------------------------------
+   KnoRI design tokens — "quiet archive"
+   ---------------------------------------------------------------------------
+   KnoRI's job is to make a person feel accurately understood. The surface
+   therefore reads like a well-kept notebook rather than a dashboard: warm
+   paper, ink, hairline rules, and exactly one accent — ochre — which is
+   reserved for Recognition moments and never used as decoration.
+
+   Every value below is a CSS custom property so the whole product can be
+   re-themed in one place. Tailwind utilities are generated from these in
+   globals.css via @theme inline.
+--------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  /* -- surfaces ------------------------------------------------------- */
+  --knori-bg: #faf8f3; /* paper */
+  --knori-bg-sunken: #f2eee4; /* wells, code, quiet strips */
+  --knori-surface: #ffffff; /* cards */
+  --knori-surface-raised: #fffefb; /* dialogs, popovers */
+  --knori-overlay: rgb(30 26 20 / 0.34);
+
+  /* -- ink ------------------------------------------------------------ */
+  --knori-ink: #191714; /* primary text */
+  --knori-ink-secondary: #4b453d; /* body at rest */
+  --knori-ink-muted: #756c61; /* labels, metadata (AA on paper) */
+  --knori-ink-inverted: #faf8f3;
+
+  /* -- lines ---------------------------------------------------------- */
+  --knori-line: #e5ddd0;
+  --knori-line-strong: #cec3b0;
+
+  /* -- accent: Recognition only --------------------------------------- */
+  --knori-accent: #955611;
+  --knori-accent-hover: #7d4809;
+  --knori-accent-ink: #fffdf8; /* text on accent */
+  --knori-accent-soft: #f6e9d5; /* tinted fills */
+  --knori-accent-line: #e0c69d;
+
+  /* -- states --------------------------------------------------------- */
+  --knori-positive: #2c6442;
+  --knori-positive-soft: #e3eee6;
+  --knori-danger: #9c2b22;
+  --knori-danger-hover: #82211a;
+  --knori-danger-soft: #f8e5e3;
+  --knori-danger-ink: #fffdfc;
+  --knori-info: #2a5570;
+  --knori-info-soft: #e4ecf2;
+
+  /* -- focus ---------------------------------------------------------- */
+  --knori-focus: #1d4f6b;
+
+  /* -- elevation ------------------------------------------------------ */
+  --knori-shadow-1: 0 1px 1px rgb(25 23 20 / 0.04), 0 1px 3px rgb(25 23 20 / 0.05);
+  --knori-shadow-2: 0 1px 2px rgb(25 23 20 / 0.05), 0 8px 22px -12px rgb(25 23 20 / 0.18);
+  --knori-shadow-3: 0 2px 4px rgb(25 23 20 / 0.06), 0 28px 56px -24px rgb(25 23 20 / 0.28);
+
+  /* -- radii ---------------------------------------------------------- */
+  --knori-radius-sm: 6px;
+  --knori-radius-md: 10px;
+  --knori-radius-lg: 16px;
+  --knori-radius-xl: 24px;
+
+  /* -- type ------------------------------------------------------------
+     Newsreader carries everything KnoRI says *about the person*; the sans
+     carries everything the product says about itself. The split is the point:
+     a Recognition should not look like a notification.                     */
+  --knori-font-sans:
+    var(--font-instrument-sans), ui-sans-serif, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --knori-font-serif:
+    var(--font-newsreader), ui-serif, "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --knori-font-mono:
+    var(--font-plex-mono), ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, monospace;
+
+  /* -- paper grain ---------------------------------------------------- */
+  --knori-grain-opacity: 0.4;
+  --knori-grain-blend: multiply;
+}
+
+/* prefers-color-scheme, but only while nothing has been chosen explicitly. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --knori-bg: #131210;
+    --knori-bg-sunken: #0d0c0a;
+    --knori-surface: #1b1916;
+    --knori-surface-raised: #221f1b;
+    --knori-overlay: rgb(8 7 6 / 0.62);
+
+    --knori-ink: #f0eae0;
+    --knori-ink-secondary: #c6bdb0;
+    --knori-ink-muted: #968d80;
+    --knori-ink-inverted: #16140f;
+
+    --knori-line: #302c26;
+    --knori-line-strong: #453e35;
+
+    --knori-accent: #e0a458;
+    --knori-accent-hover: #edb670;
+    --knori-accent-ink: #1e1509;
+    --knori-accent-soft: #2b2317;
+    --knori-accent-line: #55442a;
+
+    --knori-positive: #7bbb93;
+    --knori-positive-soft: #1a2620;
+    --knori-danger: #e78d83;
+    --knori-danger-hover: #f0a49b;
+    --knori-danger-soft: #2c1b18;
+    --knori-danger-ink: #24100d;
+    --knori-info: #8fb9d4;
+    --knori-info-soft: #16222b;
+
+    --knori-focus: #8fc4e3;
+
+    --knori-shadow-1: 0 1px 1px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
+    --knori-shadow-2: 0 1px 2px rgb(0 0 0 / 0.5), 0 10px 26px -14px rgb(0 0 0 / 0.7);
+    --knori-shadow-3: 0 2px 6px rgb(0 0 0 / 0.5), 0 32px 60px -26px rgb(0 0 0 / 0.85);
+
+    --knori-grain-opacity: 0.22;
+    --knori-grain-blend: overlay;
+  }
+}
+
+/* The same dark palette, applied when the user picks dark explicitly. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --knori-bg: #131210;
+  --knori-bg-sunken: #0d0c0a;
+  --knori-surface: #1b1916;
+  --knori-surface-raised: #221f1b;
+  --knori-overlay: rgb(8 7 6 / 0.62);
+
+  --knori-ink: #f0eae0;
+  --knori-ink-secondary: #c6bdb0;
+  --knori-ink-muted: #968d80;
+  --knori-ink-inverted: #16140f;
+
+  --knori-line: #302c26;
+  --knori-line-strong: #453e35;
+
+  --knori-accent: #e0a458;
+  --knori-accent-hover: #edb670;
+  --knori-accent-ink: #1e1509;
+  --knori-accent-soft: #2b2317;
+  --knori-accent-line: #55442a;
+
+  --knori-positive: #7bbb93;
+  --knori-positive-soft: #1a2620;
+  --knori-danger: #e78d83;
+  --knori-danger-hover: #f0a49b;
+  --knori-danger-soft: #2c1b18;
+  --knori-danger-ink: #24100d;
+  --knori-info: #8fb9d4;
+  --knori-info-soft: #16222b;
+
+  --knori-focus: #8fc4e3;
+
+  --knori-shadow-1: 0 1px 1px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
+  --knori-shadow-2: 0 1px 2px rgb(0 0 0 / 0.5), 0 10px 26px -14px rgb(0 0 0 / 0.7);
+  --knori-shadow-3: 0 2px 6px rgb(0 0 0 / 0.5), 0 32px 60px -26px rgb(0 0 0 / 0.85);
+
+  --knori-grain-opacity: 0.22;
+  --knori-grain-blend: overlay;
+}

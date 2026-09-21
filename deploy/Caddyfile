@@ -1,0 +1,46 @@
+# KnoRI reverse proxy. Caddy gets and renews the TLS certificate by itself.
+{
+	email {$ACME_EMAIL}
+}
+
+{$KNORI_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# Chat and events are server-sent events: no buffering, no read timeout.
+	@stream path /api/v1/conversations/*/messages /api/v1/events
+	handle @stream {
+		reverse_proxy api:8000 {
+			flush_interval -1
+			transport http {
+				read_timeout 0
+			}
+		}
+	}
+
+	handle /api/* {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 20mb
+			roll_keep 5
+		}
+	}
+}

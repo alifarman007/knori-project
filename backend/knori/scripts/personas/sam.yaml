@@ -1,0 +1,292 @@
+# Demo persona — the correction loop.
+#
+# Two cards, then the user answers both: one correction with text (which amends the
+# claim and produces a revised card) and one rejection (which blocks the claim from
+# coming back, rule R7). Format: see backend/evals/README.md.
+name: sam
+summary: Gets two cards, corrects one and rejects the other. The correction demo.
+display_name: Sam Okafor
+preferred_name: Sam
+email: sam@knori.demo
+password: knori-demo-1234
+timezone: Europe/London
+now: 2026-09-21T09:00:00Z
+
+settings:
+  # Two cards from the run, plus the revised card the correction produces.
+  max_recognitions_per_day: 3
+  chat_style: warm
+
+conversations:
+  # ---------------------------------------------------------------- Monday 14th
+  - id: c1
+    title: End of a project
+    started: 2026-09-14T17:05:00Z
+    messages:
+      - id: m1
+        role: user
+        text: >-
+          handed over the school website today. six weeks of it. now I just have to
+          do the boring end bit
+      - role: assistant
+        text: Congratulations on getting it out. What is the boring end bit?
+      - id: m3
+        role: user
+        after: 4
+        text: >-
+          the invoice. I never send it until the whole thing is signed off, so it has
+          been sitting in a draft since july
+        signals:
+          - quote: I never send it until the whole thing is signed off
+            content: They hold back an invoice until a project is fully signed off.
+            topic: work.workload
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, money]
+      - role: assistant
+        text: >-
+          Thanks for telling me. Is signing off the thing that decides it, or the
+          calendar?
+      - id: m5
+        role: user
+        after: 5
+        text: >-
+          sign off, always. I would feel odd asking for money on something still half
+          open
+      - role: assistant
+        text: Understood. Anything else from today?
+      - id: m7
+        role: user
+        after: 6
+        text: >-
+          only that I worked straight through from nine until five without stopping
+          because I wanted the handover done before I sat down
+        signals:
+          - quote: I worked straight through from nine until five without stopping
+            content: They worked without a break to finish a handover before resting.
+            topic: rest.downtime
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work]
+      - role: assistant
+        text: >-
+          Noted. I will not make anything of one day on its own.
+      - id: m9
+        role: user
+        after: 3
+        text: >-
+          I build websites for schools and small charities, in case that is useful
+          for you
+        memories:
+          - quote: I build websites for schools and small charities
+            statement: They build websites for schools and small charities.
+            kind: fact
+            key: fact.work
+      - role: assistant
+        text: That is useful, thank you. Have a good evening, Sam.
+
+  # -------------------------------------------------------------- Wednesday 16th
+  - id: c2
+    title: The other two invoices
+    started: 2026-09-16T20:40:00Z
+    messages:
+      - id: m11
+        role: user
+        text: >-
+          did my accounts tonight. there are two more invoices I have not sent from
+          projects that finished in august
+        signals:
+          - quote: there are two more invoices I have not sent
+            content: Two invoices from finished projects are still unsent.
+            topic: work.workload
+            kind: situation
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, money]
+      - role: assistant
+        text: Two from August. Is there something in the way of sending them?
+      - id: m13
+        role: user
+        after: 5
+        text: >-
+          not really. one of them I have rewritten three times because the wording
+          felt pushy
+      - role: assistant
+        text: >-
+          That is a different thing from forgetting. I will keep both in mind.
+      - id: m15
+        role: user
+        after: 7
+        text: >-
+          I also realised I have not had a proper evening off since the handover. I
+          keep telling myself I will stop once the list is empty
+        signals:
+          - quote: I keep telling myself I will stop once the list is empty
+            content: They postpone stopping until every task is finished.
+            topic: rest.downtime
+            kind: reflection
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [rest]
+      - role: assistant
+        text: >-
+          Thank you for saying it. The list being empty is a condition that tends not
+          to arrive, but that is your call, not mine.
+      - id: m17
+        role: user
+        after: 4
+        text: >-
+          it is not, is it. right, one invoice tonight and the rest at the weekend
+      - role: assistant
+        text: Good luck with it. How do you usually get through the accounts?
+      - id: m18
+        role: user
+        after: 5
+        text: >-
+          spreadsheet, tea, and an hour where I do not look at my phone. it is not
+          complicated, I just have to sit down
+      - role: assistant
+        text: >-
+          A spreadsheet and an hour. I will keep that as something you told me.
+      - id: m18b
+        role: user
+        after: 3
+        text: right. night
+      - role: assistant
+        text: Night, Sam.
+
+  # -------------------------------------------------------------- Saturday 19th
+  - id: c3
+    title: Saturday catch-up
+    started: 2026-09-19T11:15:00Z
+    messages:
+      - id: m19
+        role: user
+        text: >-
+          saturday morning, coffee, and the same two invoices still open in a tab
+        signals:
+          - quote: the same two invoices still open in a tab
+            content: The same unsent invoices were still open days later.
+            topic: work.workload
+            kind: situation
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, money]
+      - role: assistant
+        text: Still open. Do you want to talk about them or about something else?
+      - id: m21
+        role: user
+        after: 4
+        text: >-
+          something else honestly. the charity one wants a second phase and I said yes
+          before I had looked at my october
+      - role: assistant
+        text: What made you say yes straight away?
+      - id: m23
+        role: user
+        after: 5
+        text: >-
+          they are nice people and the work is good. I will find the hours somewhere,
+          I always do
+      - role: assistant
+        text: >-
+          Noted as what happened rather than as a conclusion about you.
+      - id: m25
+        role: user
+        after: 6
+        text: >-
+          anyway. going to walk the dog and then do the invoices, in that order for
+          once
+      - role: assistant
+        text: A reasonable order. Enjoy the walk.
+      - id: m27
+        role: user
+        after: 4
+        text: >-
+          one thing before I go, if you ever notice something about me, show me what
+          I actually said. I do not want to be guessed at
+      - role: assistant
+        text: >-
+          That is how it works. Every observation comes with the lines it came from,
+          and you can correct any of it.
+
+claims:
+  - id: k1
+    kind: pattern
+    topic: work.workload
+    statement: The user leaves invoicing until a project is completely finished.
+    rationale: Three separate mentions across three days, each about an unsent invoice.
+    evidence: [m3, m11, m19]
+    model_confidence: 0.84
+    weight: 1.0
+    card:
+      title: Invoices wait for the finish line
+      body: >-
+        You seem to hold the money side back until a piece of work is fully closed.
+        It has come up on three different days, each time about something already
+        delivered.
+      explanation: >-
+        Three things you said, on three different days, all about the same part of the
+        job. That is enough for KnoRI to raise it. If the reason is different from
+        what this assumes, correct it and KnoRI will use your version instead.
+
+  - id: k2
+    kind: preference
+    topic: rest.downtime
+    statement: The user postpones stopping until every task is done.
+    rationale: Two mentions on different days about not stopping while work remains.
+    evidence: [m7, m15]
+    model_confidence: 0.76
+    weight: 1.0
+    card:
+      title: Resting after the list, not before
+      body: >-
+        It looks like the break comes after the work rather than inside it. You have
+        described it twice this week, once as a whole day and once as a rule you set
+        yourself.
+      explanation: >-
+        Two things you said on two different days about waiting for the end of the
+        work before stopping. That is enough to mention, not enough to be sure.
+
+  # Never proposed. It exists so the revised card has words to use when the
+  # correction below amends k1 into this claim.
+  - id: k1_amended
+    propose: false
+    kind: pattern
+    topic: work.workload
+    statement: The user sends invoices in a single batch at the end of the month.
+    rationale: The user's own correction.
+    evidence: [m3, m11, m19]
+    model_confidence: 1.0
+    card:
+      title: Invoicing in one batch
+      body: >-
+        You told KnoRI that the money side happens in one sitting at the end of the
+        month, and that doing it piece by piece costs you a morning. KnoRI has
+        replaced what it thought with what you said.
+      explanation: >-
+        This is your own version of the claim, not KnoRI's. It is now what KnoRI
+        reasons from, and the earlier version has been put aside.
+
+feedback:
+  - claim: k1
+    action: correct
+    text: >-
+      it is not that I put them off. I do them all in one go at the end of the month
+      because chasing them one at a time costs me a whole morning
+    parse:
+      kind: amend
+      assertion: They handle invoicing in one batch at the end of the month.
+      replacement: The user sends invoices in a single batch at the end of the month.
+      topic: work.workload
+
+  - claim: k2
+    action: reject
+    reason_code: not_true

@@ -1,0 +1,357 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Dark utilities follow the same rule as the tokens: the media query decides
+   unless the person has chosen a theme by hand. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  --color-paper: var(--knori-bg);
+  --color-sunken: var(--knori-bg-sunken);
+  --color-surface: var(--knori-surface);
+  --color-raised: var(--knori-surface-raised);
+  --color-overlay: var(--knori-overlay);
+
+  --color-ink: var(--knori-ink);
+  --color-ink-secondary: var(--knori-ink-secondary);
+  --color-ink-muted: var(--knori-ink-muted);
+  --color-ink-inverted: var(--knori-ink-inverted);
+
+  --color-line: var(--knori-line);
+  --color-line-strong: var(--knori-line-strong);
+
+  --color-accent: var(--knori-accent);
+  --color-accent-hover: var(--knori-accent-hover);
+  --color-accent-ink: var(--knori-accent-ink);
+  --color-accent-soft: var(--knori-accent-soft);
+  --color-accent-line: var(--knori-accent-line);
+
+  --color-positive: var(--knori-positive);
+  --color-positive-soft: var(--knori-positive-soft);
+  --color-danger: var(--knori-danger);
+  --color-danger-hover: var(--knori-danger-hover);
+  --color-danger-soft: var(--knori-danger-soft);
+  --color-danger-ink: var(--knori-danger-ink);
+  --color-info: var(--knori-info);
+  --color-info-soft: var(--knori-info-soft);
+
+  --color-focus: var(--knori-focus);
+
+  --font-sans: var(--knori-font-sans);
+  --font-serif: var(--knori-font-serif);
+  --font-mono: var(--knori-font-mono);
+
+  --radius-sm: var(--knori-radius-sm);
+  --radius-md: var(--knori-radius-md);
+  --radius-lg: var(--knori-radius-lg);
+  --radius-xl: var(--knori-radius-xl);
+
+  --shadow-soft: var(--knori-shadow-1);
+  --shadow-lift: var(--knori-shadow-2);
+  --shadow-float: var(--knori-shadow-3);
+
+  /* 4px base, ~1.2 modular ratio. UI text is 15px, prose is 17px. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.45;
+  --text-2xs--letter-spacing: 0.06em;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.55;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.6;
+  --text-md: 1.0625rem;
+  --text-md--line-height: 1.65;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 1.875rem;
+  --text-2xl--line-height: 1.25;
+  --text-3xl: 2.375rem;
+  --text-3xl--line-height: 1.15;
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 1.08;
+  --text-5xl: 3.75rem;
+  --text-5xl--line-height: 1.03;
+  --text-6xl: 4.5rem;
+  --text-6xl--line-height: 1;
+
+  --ease-out-quiet: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  --animate-rise: rise 0.42s var(--ease-out-quiet) both;
+  --animate-fade: fade 0.24s var(--ease-out-quiet) both;
+  --animate-mark: mark 0.5s var(--ease-out-quiet) both;
+  --animate-spin-quiet: spin 0.7s linear infinite;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sheet-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sheet-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* Skeleton shimmer. */
+@keyframes sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* The identity motif: a hand-drawn-feeling rule that sweeps in under text. */
+@keyframes mark {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--knori-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--knori-bg);
+    color: var(--knori-ink);
+    font-family: var(--knori-font-sans);
+    font-size: var(--text-base);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "kern", "liga", "calt";
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* Paper grain. Fixed so it never scrolls with content, and pointer-events
+     none so it is invisible to everything but the eye. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: var(--knori-grain-opacity);
+    mix-blend-mode: var(--knori-grain-blend);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)' opacity='0.22'/%3E%3C/svg%3E");
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--knori-font-serif);
+    color: var(--knori-ink);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background-color: var(--knori-accent-soft);
+    color: var(--knori-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--knori-focus);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* We draw our own rings; the browser default would double up. */
+  button:focus:not(:focus-visible),
+  a:focus:not(:focus-visible),
+  input:focus:not(:focus-visible),
+  textarea:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::placeholder {
+    color: var(--knori-ink-muted);
+    opacity: 1;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--knori-line);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  /* Page gutters: 16px on phones, growing to a readable column. */
+  .knori-gutter {
+    padding-inline: 16px;
+  }
+
+  @media (min-width: 640px) {
+    .knori-gutter {
+      padding-inline: 32px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .knori-gutter {
+      padding-inline: 48px;
+    }
+  }
+
+  /* An eyebrow label: small, spaced, mono. Used for section numbers and dates. */
+  .knori-eyebrow {
+    font-family: var(--knori-font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--knori-ink-muted);
+  }
+
+  /* The marked line under the wordmark and under Recognition headings. */
+  .knori-mark {
+    position: relative;
+  }
+
+  .knori-mark::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.18em;
+    height: 2px;
+    background-color: var(--knori-accent);
+    transform-origin: left;
+    border-radius: 2px;
+  }
+
+  .knori-prose {
+    font-family: var(--knori-font-serif);
+    font-size: var(--text-md);
+    line-height: 1.72;
+    color: var(--knori-ink-secondary);
+  }
+
+  .knori-prose p + p {
+    margin-top: 1em;
+  }
+
+  /* Hairline grid paper, used behind the landing hero. */
+  .knori-ruled {
+    background-image: linear-gradient(to bottom, var(--knori-line) 1px, transparent 1px);
+    background-size: 100% 2rem;
+  }
+}
+
+@layer utilities {
+  .knori-stack > * + * {
+    margin-top: var(--knori-stack-gap, 1rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Thin, ink-coloured scrollbars so long threads stay calm. */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--knori-line-strong);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--knori-ink-muted);
+    background-clip: content-box;
+  }
+}

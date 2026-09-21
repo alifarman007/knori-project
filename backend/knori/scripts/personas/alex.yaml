@@ -1,0 +1,347 @@
+# Demo persona — the happy path.
+#
+# Four conversations over eight days. Two claims pass the gates, so a demo can show
+# a card, its quotes, and the message each quote came from — and a third reading
+# the interpreter set aside. Format: see backend/evals/README.md.
+name: alex
+summary: A freelance designer with two clear patterns. The happy-path demo.
+display_name: Alex Rowe
+preferred_name: Alex
+email: alex@knori.demo
+password: knori-demo-1234
+timezone: Europe/London
+now: 2026-09-21T09:00:00Z
+
+settings:
+  # Two claims pass the gates in one run. R10 counts a claim already marked
+  # `recognize` as open, so a third would be held until one of these is answered.
+  max_recognitions_per_day: 2
+  chat_style: warm
+
+conversations:
+  # ------------------------------------------------------------------ Sunday 13th
+  - id: c1
+    title: Sunday evening again
+    started: 2026-09-13T19:40:00Z
+    messages:
+      - id: m1
+        role: user
+        text: >-
+          evening. supposed to be my day off but I opened the client file again about
+          an hour ago and now I am three pages in
+        signals:
+          - quote: I opened the client file again
+            content: They reopened work on a Sunday evening after calling it a day off.
+            topic: work.boundaries
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, weekend]
+      - role: assistant
+        text: >-
+          That sounds like it pulled you in rather than the other way round. What was
+          it that made you open it?
+      - id: m3
+        role: user
+        after: 4
+        text: >-
+          honestly it is the quiet. nobody emails on a sunday night so it feels like
+          the only time nothing is going to interrupt me
+      - role: assistant
+        text: Makes sense. Is that quiet worth the day off, do you think?
+      - id: m5
+        role: user
+        after: 6
+        text: >-
+          probably not. I said the same thing last weekend and the one before that.
+          it is becoming a bit of a thing
+      - role: assistant
+        text: >-
+          Thanks for telling me. I will keep that in mind rather than make anything
+          of it yet.
+      - id: m7
+        role: user
+        after: 3
+        text: >-
+          anyway. I am a freelance brand designer, mostly packaging, so september is
+          always the heavy one before the christmas print runs
+        memories:
+          - quote: I am a freelance brand designer, mostly packaging
+            statement: They work as a freelance brand designer, mostly on packaging.
+            kind: fact
+            key: fact.work
+      - role: assistant
+        text: >-
+          Good to know. Packaging before Christmas print runs sounds like a hard
+          deadline you cannot move.
+      - id: m9
+        role: user
+        after: 5
+        text: >-
+          exactly. right I am going to shut the laptop and watch something terrible
+      - role: assistant
+        text: Enjoy the terrible thing. Talk soon.
+
+  # ----------------------------------------------------------------- Wednesday 16th
+  - id: c2
+    title: Morning before the emails
+    started: 2026-09-16T05:55:00Z
+    messages:
+      - id: m11
+        role: user
+        text: >-
+          up at half five. I get more done before seven than I manage all afternoon,
+          every single time
+        signals:
+          - quote: I get more done before seven than I manage all afternoon
+            content: They describe the early morning as their most productive stretch.
+            topic: work.environment
+            kind: preference
+            subject: self
+            polarity: 1
+            strength: 1.0
+            tags: [work, morning]
+      - role: assistant
+        text: What is different about the morning for you?
+      - id: m13
+        role: user
+        after: 4
+        text: >-
+          nothing has landed yet. no slack, no client asking for one small change
+          that is never small
+      - role: assistant
+        text: >-
+          That tracks with the quiet you mentioned on Sunday. Anything on today you
+          want to think through?
+      - id: m15
+        role: user
+        after: 7
+        text: >-
+          yeah actually. the studio in bristol offered me a four month contract and I
+          cannot work out if I want it
+        signals:
+          - quote: the studio in bristol offered me a four month contract
+            content: They have been offered a four-month contract by a studio.
+            topic: decisions.commitment
+            kind: situation
+            subject: self
+            polarity: 0
+            strength: 1.0
+            tags: [work]
+      - role: assistant
+        text: What is the pull in each direction?
+      - id: m17
+        role: user
+        after: 5
+        text: >-
+          let me just say it out loud and see if it sounds stupid. steady money, four
+          months, but I lose the two clients I actually like
+        signals:
+          - quote: let me just say it out loud and see if it sounds stupid
+            content: They work through a decision by saying it aloud to hear how it sounds.
+            topic: decisions.style
+            kind: behavior
+            subject: self
+            polarity: 0
+            strength: 1.0
+            tags: [work, decision]
+      - role: assistant
+        text: >-
+          It does not sound stupid. Say the rest of it if you want, I am not going to
+          jump in.
+      - id: m19
+        role: user
+        after: 6
+        text: >-
+          hearing it back I think the answer is no. I only needed to hear myself say
+          the bit about losing them
+      - role: assistant
+        text: Then that is where you got to. Nothing from me needed.
+
+  # ------------------------------------------------------------------ Thursday 17th
+  - id: c3
+    title: Talking it out
+    started: 2026-09-17T21:15:00Z
+    messages:
+      - id: m21
+        role: user
+        text: >-
+          told the bristol studio no this afternoon. felt fine about it once it was
+          sent
+      - role: assistant
+        text: How did you land on it in the end?
+      - id: m23
+        role: user
+        after: 4
+        text: >-
+          same as always really, I ring my brother and talk at him until I hear which
+          way I am leaning. he barely says anything
+        signals:
+          - quote: I ring my brother and talk at him until I hear which way I am leaning
+            content: They reach a decision by talking it through aloud with someone.
+            topic: decisions.style
+            kind: behavior
+            subject: self
+            polarity: 0
+            strength: 1.0
+            tags: [decision, family]
+      - role: assistant
+        text: >-
+          That is a clear way of doing it. Does it work better than writing it down?
+      - id: m25
+        role: user
+        after: 5
+        text: >-
+          much better. lists just make me stare at the list. speaking it is the only
+          bit that moves me
+      - role: assistant
+        text: Noted. Anything else from today?
+      - id: m27
+        role: user
+        after: 8
+        text: >-
+          only that last sunday I was back in the file by nine at night and I said I
+          would not be. no idea why I keep doing that one
+        signals:
+          - quote: last sunday I was back in the file by nine at night
+            content: They returned to work on a Sunday evening despite saying they would not.
+            topic: work.boundaries
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, weekend]
+      - role: assistant
+        text: >-
+          Thank you for saying it. I will hold on to it rather than tell you what it
+          means.
+      - id: m29
+        role: user
+        after: 3
+        text: right. bed. long day tomorrow with the print proof
+      - role: assistant
+        text: Sleep well, Alex.
+
+  # ------------------------------------------------------------------- Sunday 20th
+  - id: c4
+    title: The proof and the day off
+    started: 2026-09-20T19:20:00Z
+    messages:
+      - id: m31
+        role: user
+        text: >-
+          it is sunday night and I am at the desk again. the print proof came back
+          wrong and I could not leave it until monday
+        signals:
+          - quote: it is sunday night and I am at the desk again
+            content: They were working again on a Sunday night.
+            topic: work.boundaries
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, weekend]
+      - role: assistant
+        text: >-
+          That sounds like it had a reason behind it. Is the proof sorted now?
+      - id: m33
+        role: user
+        after: 6
+        text: >-
+          sorted. took forty minutes and then I stayed for another two hours doing
+          things nobody asked for
+      - role: assistant
+        text: What kept you there after the proof was done?
+      - id: m35
+        role: user
+        after: 4
+        text: >-
+          the same quiet thing. I will do the fiddly bits at six tomorrow morning and
+          they will take half the time they would at three in the afternoon
+        signals:
+          - quote: I will do the fiddly bits at six tomorrow morning
+            content: They plan detailed work for early in the morning rather than the afternoon.
+            topic: work.environment
+            kind: preference
+            subject: self
+            polarity: 1
+            strength: 1.0
+            tags: [work, morning]
+      - role: assistant
+        text: >-
+          Understood. That is two separate things you have told me about how your day
+          is shaped.
+      - id: m37
+        role: user
+        after: 5
+        text: >-
+          my partner keeps saying I am married to the job. she is probably right but
+          I am not telling her that
+        signals:
+          - quote: my partner keeps saying I am married to the job
+            content: Their partner says they are married to the job.
+            topic: relationships.partner
+            kind: statement
+            subject: other
+            polarity: 0
+            strength: 0.6
+            tags: [family]
+      - role: assistant
+        text: >-
+          I will store that as her words, not as a conclusion about you.
+      - id: m39
+        role: user
+        after: 4
+        text: ok. shutting it now. properly this time
+      - role: assistant
+        text: Good night, Alex.
+
+claims:
+  - id: k1
+    kind: pattern
+    topic: work.boundaries
+    statement: The user opens work again on Sunday evenings despite planning not to.
+    rationale: Said plainly on three separate days, each time unprompted and after the fact.
+    evidence: [m1, m27, m31]
+    model_confidence: 0.86
+    weight: 1.0
+    card:
+      title: Sunday evenings keep filling up
+      body: >-
+        You seem to come back to the desk on a Sunday night, even on the weeks you
+        had decided not to. It has happened on three separate occasions you have
+        mentioned, each time for a reason that made sense at the time.
+      explanation: >-
+        Three separate things you said, on three different days, all pointing the same
+        way. That is enough for KnoRI to raise it. It is not a judgement about whether
+        it is a problem, and if it reads wrong to you, say so.
+
+  - id: k2
+    kind: pattern
+    topic: decisions.style
+    statement: The user reaches a decision by speaking it aloud rather than writing it down.
+    rationale: Described twice on different days, once while doing it and once looking back.
+    evidence: [m17, m23]
+    model_confidence: 0.80
+    weight: 1.0
+    card:
+      title: Deciding out loud
+      body: >-
+        It looks like a choice only settles for you once you have heard yourself make
+        the case for it. Twice this week you worked something through by speaking it
+        rather than putting it on paper.
+      explanation: >-
+        Two things you said on two different days, both about hearing a decision
+        rather than reading it. That is enough to mention, not enough to be certain.
+
+declined:
+  - about: a preference about which hours of the day the user works best in
+    reason: ambiguous
+    evidence: [m11]
+  - about: a reading about the user being unable to rest at all
+    reason: ambiguous
+    evidence: [m31]
+  - about: a claim about what the user's partner thinks of them
+    reason: not_self
+    evidence: [m37]

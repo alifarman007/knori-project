@@ -1,0 +1,39 @@
+# KnoRI — local development stack.
+# Postgres and mailpit run in Docker; the API, worker and web app run on the host
+# (./run api, ./run worker, ./run web) so reloads are instant.
+# deploy/compose.prod.yml runs everything in containers on the VPS.
+
+name: knori
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: knori
+      POSTGRES_PASSWORD: knori
+      POSTGRES_DB: knori
+      # Deterministic ordering for tests and exports.
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      - "55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U knori -d knori"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # Catches every email the app sends in dev. Web UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # web UI
+    environment:
+      MP_MAX_MESSAGES: 500
+    restart: unless-stopped
+
+volumes:
+  pgdata:

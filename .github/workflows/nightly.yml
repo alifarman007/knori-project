@@ -1,0 +1,231 @@
+# Nightly checks that cost money, and are therefore off until somebody turns them on.
+#
+# Two of them:
+#   * live provider contract tests (`pytest -m live`) — a handful of tiny real calls
+#     that prove the Anthropic and OpenAI adapters still match the SDKs: structured
+#     parse, streaming, a cache read on the second call, embedding dimensions.
+#     Runs when ANTHROPIC_API_KEY and OPENAI_API_KEY are set as repository secrets.
+#   * the Recognition quality eval (`python -m evals.runner`) — many full Opus runs
+#     over the eval personas. This one is expensive, so it needs a second switch:
+#     the repository variable RUN_NIGHTLY_EVAL set to "true".
+#
+# With neither switch on, the workflow still runs and finishes green, and the summary
+# says plainly that nothing was checked. A nightly that quietly does nothing is worse
+# than one that is honestly off.
+#
+# To turn them on:
+#   Settings -> Secrets and variables -> Actions
+#     secrets:   ANTHROPIC_API_KEY, OPENAI_API_KEY
+#     variables: RUN_NIGHTLY_EVAL = true
+name: Nightly
+
+on:
+  schedule:
+    # 03:00 UTC: after the day's deploys, before anyone is awake to be annoyed.
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      run_live:
+        description: "Run the live provider tests"
+        type: boolean
+        default: true
+      run_eval:
+        description: "Run the Recognition eval (spends real money)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # The `secrets` context cannot be read in a job-level `if`, so one small job reads
+  # it and publishes plain true/false for the others to branch on.
+  switches:
+    name: What can run tonight
+    runs-on: ubuntu-latest
+    outputs:
+      live: ${{ steps.decide.outputs.live }}
+      eval: ${{ steps.decide.outputs.eval }}
+      why: ${{ steps.decide.outputs.why }}
+    steps:
+      - id: decide
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          EVAL_VARIABLE: ${{ vars.RUN_NIGHTLY_EVAL }}
+          ASKED_FOR_LIVE: ${{ github.event_name != 'workflow_dispatch' || inputs.run_live }}
+          ASKED_FOR_EVAL: ${{ github.event_name == 'workflow_dispatch' && inputs.run_eval }}
+        run: |
+          set -euo pipefail
+          why=""
+          live=false
+          if [ -z "$ANTHROPIC_API_KEY" ] || [ -z "$OPENAI_API_KEY" ]; then
+            why="live tests skipped: ANTHROPIC_API_KEY or OPENAI_API_KEY is not set"
+          elif [ "$ASKED_FOR_LIVE" != "true" ]; then
+            why="live tests skipped: not asked for in this run"
+          else
+            live=true
+          fi
+
+          evaluation=false
+          if [ "$ASKED_FOR_EVAL" = "true" ] && [ "$live" = "true" ]; then
+            evaluation=true
+          elif [ "$EVAL_VARIABLE" = "true" ] && [ "$live" = "true" ]; then
+            evaluation=true
+          else
+            why="${why:+$why; }eval skipped: RUN_NIGHTLY_EVAL is not \"true\""
+          fi
+
+          echo "live=$live" >> "$GITHUB_OUTPUT"
+          echo "eval=$evaluation" >> "$GITHUB_OUTPUT"
+          echo "why=$why" >> "$GITHUB_OUTPUT"
+          echo "live=$live eval=$evaluation"
+
+  live:
+    name: Live provider contract tests
+    needs: switches
+    if: needs.switches.outputs.live == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: knori
+          POSTGRES_PASSWORD: knori
+          POSTGRES_DB: knori_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U knori"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ENV: test
+      LLM_MODE: live
+      DATABASE_URL: postgresql+asyncpg://knori:knori@localhost:5432/knori_test
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_REASONING_MODEL: ${{ vars.OPENAI_REASONING_MODEL || 'gpt-5.6-sol' }}
+      OPENAI_BACKGROUND_MODEL: ${{ vars.OPENAI_BACKGROUND_MODEL || 'gpt-5.6-terra' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Migrate
+        working-directory: backend
+        run: python -m alembic upgrade head
+      - name: Live tests
+        working-directory: backend
+        run: |
+          set -o pipefail
+          # pytest exits 5 when a marker matches nothing. That is not a failure while
+          # the live suite is still being written, but it must be visible.
+          pytest -m live -q --tb=short | tee live.log || status=$?
+          if [ "${status:-0}" -eq 5 ]; then
+            echo "NOTE: no tests are marked @pytest.mark.live yet." | tee -a live.log
+            exit 0
+          fi
+          exit "${status:-0}"
+      - name: Keep the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-test-log
+          path: backend/live.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  eval:
+    name: Recognition quality eval
+    needs: [switches, live]
+    if: needs.switches.outputs.eval == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: knori
+          POSTGRES_PASSWORD: knori
+          POSTGRES_DB: knori_eval
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U knori"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ENV: test
+      LLM_MODE: live
+      DATABASE_URL: postgresql+asyncpg://knori:knori@localhost:5432/knori_eval
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_REASONING_MODEL: ${{ vars.OPENAI_REASONING_MODEL || 'gpt-5.6-sol' }}
+      OPENAI_BACKGROUND_MODEL: ${{ vars.OPENAI_BACKGROUND_MODEL || 'gpt-5.6-terra' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Migrate
+        working-directory: backend
+        run: python -m alembic upgrade head
+      - name: Run the eval
+        working-directory: backend
+        run: |
+          if [ ! -f evals/runner.py ]; then
+            echo "backend/evals/runner.py does not exist yet; nothing to run."
+            exit 0
+          fi
+          python -m evals.runner
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: backend/evals/reports/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  summary:
+    name: Summary
+    needs: [switches, live, eval]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write it down
+        run: |
+          {
+            echo "## Nightly"
+            echo ""
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| Live provider tests | ${{ needs.live.result }} |"
+            echo "| Recognition eval | ${{ needs.eval.result }} |"
+            echo ""
+            if [ -n "${{ needs.switches.outputs.why }}" ]; then
+              echo "${{ needs.switches.outputs.why }}"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Fail if something that ran did not pass
+        run: |
+          for result in "${{ needs.live.result }}" "${{ needs.eval.result }}"; do
+            if [ "$result" = "failure" ]; then
+              echo "a nightly check failed"
+              exit 1
+            fi
+          done

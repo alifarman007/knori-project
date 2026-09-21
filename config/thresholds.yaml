@@ -1,0 +1,166 @@
+# KnoRI — every constant the Recognition engine decides with.
+#
+# The LLM proposes; this file and the pure functions in `backend/ros/engine/`
+# decide (CLAUDE.md engine rule 3). Changing a number here changes behaviour, so
+# a change belongs in the same PR as the eval run that justifies it.
+#
+# Versions are stamped onto every row the engine writes, so an old decision can
+# always be read back with the constants that produced it.
+
+version: thr-v1
+
+# --------------------------------------------------------------------- conf-v1
+# plan.md §4.4.  w(e) = signal.strength x evidence.weight
+#   S = sum of w over active supports, C = sum of w over active contradicts
+#   evidence_score = 1 - exp(-S / evidence_tau)
+#   consistency    = S / (S + C), or 1.0 when S + C = 0
+#   spread         = distinct calendar days (user timezone) among supports
+#   base           = evidence_score x consistency x spread
+confidence:
+  version: conf-v1
+  evidence_tau: 1.2          # S=1 -> 0.57, S=2 -> 0.81, S=3 -> 0.92
+  spread:                    # distinct support days -> multiplier
+    1: 0.5
+    2: 0.9
+    3: 1.0                   # the highest key also covers anything above it
+  # Corrections move the score, not just the card (CLAUDE.md engine rule 7).
+  # A `deny` is handled by rule R7, not here; an `amend` supersedes the row.
+  assertion_adjustment:
+    affirm: 0.10
+    scope: -0.10
+  # A claim the user wrote themselves is never scored below this.
+  user_correction_floor: 0.85
+  labels:
+    hidden_below: 0.55       # below this a card is never shown
+    strong_at: 0.75          # at or above this the card reads "strong"
+
+# --------------------------------------------------------------------- thr-v1
+# plan.md §4.5. Ordered rules; every rule is evaluated and recorded; the first
+# failing rule decides the outcome.
+threshold:
+  version: thr-v1
+  # R3 — the hard minimum. One message, one sitting or one day can never become
+  # a Recognition, whatever the model or the score says.
+  min_supports: 2
+  min_distinct_days: 2
+  min_span_hours: 12
+  min_model_confidence: 0.60   # R4
+  min_consistency: 0.70        # R5
+  # R8 — how sure the engine must be, per kind of claim.
+  kind_thresholds:
+    pattern: 0.65
+    preference: 0.60
+    value: 0.65
+    tension: 0.70
+  # R10 — the daily budget. "Open" counts pending/presented cards plus
+  # interpretations already marked recognize that have no card yet.
+  max_open_recognitions: 3
+  default_max_per_day: 2
+  # R9 — how long a dismissed claim stays quiet (plan §4.6).
+  cooldown_days:
+    first_dismiss: 30
+    repeat_dismiss: 90
+
+# ------------------------------------------------------------------- R6 policy
+# Categories KnoRI never infers a Recognition from. The category is *read* from
+# an extracted signal; it is never inferred by the threshold. The patterns below
+# are a second net over the interpretation's own statement, so a claim that is
+# obviously about one of these topics is suppressed even when nothing upstream
+# tagged it. False positives are cheap (a card is withheld); false negatives are
+# not.
+sensitive:
+  categories:
+    - health
+    - mental_health
+    - sexual_orientation
+    - religion
+    - ethnicity
+    - immigration
+    - criminal
+    - politics
+    - financial_distress
+  deny_patterns:
+    health:
+      - '\b(diabet(es|ic)|cancer|chemo\w*|asthma|migraines?|epilep\w*)\b'
+      - '\b(chronic (pain|illness|condition)|disab(led|ility)|surgery|surgeries)\b'
+      - '\b(diagnos(is|ed|es)|medications?|prescriptions?|symptoms?)\b'
+    mental_health:
+      - '\b(depress(ed|ion|ive)|anxiety|anxious|bipolar|adhd|autis(m|tic)|ocd|ptsd)\b'
+      - '\b(therapy|therapist|psychiatr\w*|psycholog(ist|ical))\b'
+      - '\b(panic attacks?|burn(ed)?[ -]?out|burnout|suicid\w*|self[ -]harm|trauma)\b'
+    sexual_orientation:
+      - '\b(gay|lesbian|bisexual|queer|homosexual|asexual|lgbtq?\w*)\b'
+      - '\b(trans(gender)?|non[ -]?binary|coming out)\b'
+    religion:
+      - '\b(christian|catholic|protestant|muslim|islam(ic)?|jew(ish|s)?|hindu)\b'
+      - '\b(buddhist|sikh|atheis[tm]|agnostic|religio(n|us)|faith)\b'
+      - '\b(pray(s|er|ers|ing)?|church|mosque|synagogue|scripture)\b'
+    ethnicity:
+      - '\b(ethnic(ity)?|racial|racism|racist|my race|people of colou?r)\b'
+      - '\b(african[ -]american|latino|latina|hispanic|indigenous)\b'
+    immigration:
+      - '\b(visas?|green card|immigration|immigrants?|asylum|deport\w*)\b'
+      - '\b(citizenship|work permit|undocumented|refugees?)\b'
+    criminal:
+      - '\b(arrest(ed)?|convict(ed|ion)|felony|misdemeano(u)?rs?)\b'
+      - '\b(prison|jail|probation|parole|criminal record|charged with)\b'
+    politics:
+      - '\b(vot(e|ed|es|ing)|voters?|elections?|ballot)\b'
+      - '\b(democrats?|republicans?|left[ -]wing|right[ -]wing|partisan)\b'
+      - '\b(politic(s|al|ally|ian|ians))\b'
+    financial_distress:
+      - '\b(bankrupt(cy)?|debts?|foreclos\w*|evict(ed|ion)|repossess\w*)\b'
+      - '\b(unemploy(ed|ment)|laid off|redundan(t|cy)|behind on (rent|bills|payments))\b'
+      - "\\b(can'?t afford|loan default|in collections|flat broke)\\b"
+
+# ------------------------------------------------- code validation of Call 2
+# plan.md §4.3. One bad item is rejected; the batch survives.
+validation:
+  actions: [create, attach, revise, retire]
+  kinds: [pattern, preference, value, tension]
+  roles: [supports, contradicts, context]
+  # Only these signals may ever be `supports` evidence (rule V1).
+  support_subjects: [self]
+  min_statement_chars: 8
+  max_statement_chars: 400
+  # An interpretation statement is about the user in the third person. These
+  # words mean the model wrote a card sentence instead of a claim.
+  first_second_person:
+    - i
+    - i'm
+    - i've
+    - i'll
+    - me
+    - my
+    - mine
+    - we
+    - we're
+    - us
+    - our
+    - ours
+    - you
+    - you're
+    - you've
+    - your
+    - yours
+
+# ------------------------------------------------------------------ provenance
+provenance:
+  min_supporting_rows: 2
+  # Card text must paraphrase (CLAUDE.md engine rule 12). Quotes shorter than
+  # this are not checked, because a short common phrase can recur honestly.
+  verbatim_min_chars: 12
+
+# ------------------------------------------------------------------ similarity
+# Cosine cutoffs are a property of the embedding model, so they are keyed by it.
+# Swapping models means re-running the calibration pairs in `backend/evals/` and
+# adding a new block here (plan §4.8) — never reusing these numbers.
+default_embedding_model: text-embedding-3-small
+similarity:
+  text-embedding-3-small:
+    dedup: 0.90          # two open interpretations are candidates to merge
+    deny_same: 0.90      # at or above: the same claim, no judge call
+    deny_different: 0.70 # below: a different claim, no judge call
+    memory: 0.92         # an extracted memory confirms an existing item
+    retrieval: 0.75      # a past user message is worth putting in chat context
+    cascade: 0.60        # after feedback, re-score everything this close

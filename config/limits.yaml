@@ -1,0 +1,37 @@
+# Spend caps and rate limits (plan.md §6.6, §7).
+#
+# A normal active day costs $1.20–$1.90 (cost model v0, plan.md §6.6), so a $2.00
+# per-user cap does not throttle a real tester — it stops a runaway loop.
+#
+# What happens as a user approaches their cap:
+#   at effort_downgrade_at (80%)  chat drops to `low` effort at the NEXT conversation
+#                                 start — changing effort mid-conversation would throw
+#                                 away the prompt cache and cost more than it saves;
+#   at 100%                       chat shows a friendly limit message and `interpret`
+#                                 defers to the next day.
+# When the global cap is reached the worker pauses LLM jobs and emails ops.
+
+# Per-user daily cost cap, US dollars.
+per_user_daily_usd: 3.00
+# The tighter cap used during dogfood and the private beta.
+beta_per_user_daily_usd: 2.00
+# Set to false once Phase 1 is past beta and the full cap applies.
+beta_caps_active: true
+
+# Whole-install daily cap. $15/day is about $450/month, which keeps the account
+# under Anthropic's $500 Start-tier monthly limit with evals included.
+global_daily_usd: 15.00
+
+# Fraction of the per-user cap at which chat effort drops to `low`.
+effort_downgrade_at: 0.80
+
+# In-process token buckets in the single api container (plan.md §7).
+rate_limits:
+  login_per_min_per_ip: 10
+  register_per_hour_per_ip: 5
+  messages_per_min_per_user: 30
+  feedback_per_min_per_user: 60
+  export_per_hour_per_user: 3
+  resend_verification_per_hour_per_ip: 5
+  password_reset_per_hour_per_ip: 5
+  recognitions_run_per_10min_per_user: 1

@@ -1,0 +1,217 @@
+# Eval persona 02 — the midnight sitting.
+#
+# One long night's conversation crosses midnight, so it falls on two calendar days
+# while being one sitting. R3 wants two days AND twelve hours between the earliest
+# and latest support; this is the case that separates the two halves of that rule.
+name: p02_noor
+summary: A real pattern, plus one sitting that spans midnight and a trivial restatement.
+display_name: Noor Rahimi
+preferred_name: Noor
+email: p02-noor@knori.eval
+password: knori-eval-1234
+timezone: Europe/London
+now: 2026-09-21T10:00:00Z
+
+settings:
+  max_recognitions_per_day: 2
+
+conversations:
+  - id: c1
+    title: Tuesday
+    started: 2026-09-15T18:20:00Z
+    messages:
+      - id: n1
+        role: user
+        text: >-
+          finished the grant application an hour before it closed. again
+        signals:
+          - quote: finished the grant application an hour before it closed
+            content: They finished an application an hour before the deadline.
+            topic: work.workload
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, deadline]
+      - role: assistant
+        text: An hour before. Was that the plan or how it turned out?
+      - id: n3
+        role: user
+        after: 4
+        text: >-
+          how it turned out. I had three weeks and I did most of it in the last
+          afternoon
+      - role: assistant
+        text: >-
+          Thanks for telling me. One deadline is one deadline; I will keep it and see
+          if anything else lines up with it.
+      - id: n5
+        role: user
+        after: 5
+        text: >-
+          I run a small community arts charity, so there is always another
+          application behind this one
+        memories:
+          - quote: I run a small community arts charity
+            statement: They run a small community arts charity.
+            kind: fact
+            key: fact.work
+      - role: assistant
+        text: Noted. Get some rest, Noor.
+
+  - id: c2
+    title: The late one
+    started: 2026-09-17T22:35:00Z
+    messages:
+      - id: n7
+        role: user
+        text: >-
+          still up. the board pack is due at nine and I have written four of the nine
+          pages
+        signals:
+          - quote: the board pack is due at nine and I have written four of the nine pages
+            content: They were part way through a document due the next morning, late at night.
+            topic: work.workload
+            kind: situation
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, night]
+      - role: assistant
+        text: Four of nine. Is there anything that can come out of it?
+      - id: n9
+        role: user
+        after: 12
+        text: >-
+          not really. it is the same every quarter, I tell myself I will start it on
+          the monday and then it is the thursday night again
+      - role: assistant
+        text: >-
+          That is one night described twice, not two nights. I will hold it as one.
+      - id: n11
+        role: user
+        after: 28
+        text: >-
+          gone midnight and I am on page seven. if I stop now I will not sleep anyway
+        signals:
+          - quote: gone midnight and I am on page seven
+            content: They were still working on the document after midnight.
+            topic: work.workload
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, night]
+      - role: assistant
+        text: >-
+          Understood. Two things from the same sitting, even either side of midnight,
+          are still one sitting.
+      - id: n13
+        role: user
+        after: 14
+        text: >-
+          done. nine pages. going to bed for four hours
+      - role: assistant
+        text: Sleep well. Good luck at nine.
+
+  - id: c3
+    title: Friday
+    started: 2026-09-18T16:10:00Z
+    messages:
+      - id: n15
+        role: user
+        text: >-
+          board meeting went fine. nobody noticed the pack was written overnight
+      - role: assistant
+        text: Good. How are you feeling about the week?
+      - id: n17
+        role: user
+        after: 5
+        text: >-
+          tired. the newsletter is due monday and I already know I will write it on
+          sunday night
+        signals:
+          - quote: I already know I will write it on sunday night
+            content: They expect to write a piece of work the night before it is due.
+            topic: work.workload
+            kind: reflection
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, deadline]
+      - role: assistant
+        text: >-
+          Thank you. That is a third separate occasion, on a third day.
+      - id: n19
+        role: user
+        after: 6
+        text: >-
+          note that down: I am tired today
+        signals:
+          - quote: I am tired today
+            content: They said they were tired.
+            topic: health.energy
+            kind: emotion
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: []
+      - role: assistant
+        text: >-
+          Noted. That is you telling me something, not me noticing anything.
+      - id: n21
+        role: user
+        after: 4
+        text: right. weekend. sort of
+      - role: assistant
+        text: Enjoy what there is of it.
+
+claims:
+  - id: k1
+    kind: pattern
+    topic: work.workload
+    statement: The user finishes written work in the last hours before it is due.
+    rationale: Three separate occasions, three separate days, each about a deadline.
+    evidence: [n1, n7, n17]
+    model_confidence: 0.83
+    card:
+      title: Work lands against the deadline
+      body: >-
+        You seem to do the bulk of a written piece in the hours right before it is
+        due, even when the time was there earlier. It has come up three times, on
+        three different days.
+      explanation: >-
+        Three things you said, on three separate days, each about finishing
+        something close to a deadline. Enough to raise, not enough to be sure.
+
+  # Proposed from the two halves of one night. R3 has to stop it: two calendar days
+  # but forty minutes apart is not two occasions.
+  - id: k2
+    kind: pattern
+    topic: work.workload
+    statement: The user does written work after midnight.
+    rationale: Two observations, on two calendar days.
+    evidence: [n7, n11]
+    model_confidence: 0.72
+
+declined:
+  - about: a claim that the user is tired, which the user just said outright
+    reason: trivial
+    evidence: [n19]
+
+expected:
+  - id: g1
+    gist: >-
+      The user finishes written work in the last hours before it is due, on
+      several different days.
+    evidence: [n1, n17]
+
+traps:
+  - id: t1
+    kind: one_sitting
+    about: One night's work either side of midnight, which is two dates and one sitting.
+    messages: [n11]
+  - id: t2
+    kind: trivial
+    about: Repeating back that they are tired, which they had just typed.
+    messages: [n19]

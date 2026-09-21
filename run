@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# KnoRI task runner. Works on Windows (Git Bash), macOS and Linux — no `make` needed.
+# Usage: ./run <task>     e.g. ./run up, ./run test, ./run lint
+# The Makefile has the same targets for the VPS and CI.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND="$ROOT/backend"
+FRONTEND="$ROOT/frontend"
+COMPOSE="docker compose -f $ROOT/deploy/compose.yml --project-directory $ROOT"
+
+# Use the backend virtualenv if it exists.
+if [ -x "$BACKEND/.venv/Scripts/python.exe" ]; then
+  PY="$BACKEND/.venv/Scripts/python.exe"          # Windows
+elif [ -x "$BACKEND/.venv/bin/python" ]; then
+  PY="$BACKEND/.venv/bin/python"                  # macOS / Linux
+else
+  PY="python"
+fi
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+task="${1:-help}"
+shift || true
+
+case "$task" in
+
+  help)
+    cat <<'EOF'
+KnoRI tasks
+
+  ./run setup        Create the Python venv, install backend + frontend deps
+  ./run db           Start Postgres (and mailpit) in Docker
+  ./run migrate      Apply database migrations
+  ./run api          Run the API on http://localhost:8000
+  ./run worker       Run the background worker
+  ./run web          Run the web app on http://localhost:3000
+  ./run up           db + migrate, then print how to start api/worker/web
+  ./run down         Stop the Docker services
+  ./run test         Backend tests (unit + integration)
+  ./run test-fast    Backend unit tests only (no database needed)
+  ./run web-test     Frontend unit tests
+  ./run e2e          End-to-end browser tests (Playwright, fake LLM)
+  ./run lint         ruff + mypy + eslint + tsc
+  ./run fmt          Format Python and TypeScript
+  ./run seed         Load demo data (./run seed alex)
+  ./run eval         Recognition quality evals (spends real API money)
+  ./run schema       Regenerate docs/schema.sql
+  ./run revision "message"   Create a new Alembic migration
+EOF
+    ;;
+
+  setup)
+    if [ ! -d "$BACKEND/.venv" ]; then
+      echo "→ creating virtualenv"
+      python -m venv "$BACKEND/.venv"
+    fi
+    if [ -x "$BACKEND/.venv/Scripts/python.exe" ]; then PY="$BACKEND/.venv/Scripts/python.exe"; else PY="$BACKEND/.venv/bin/python"; fi
+    echo "→ installing backend dependencies"
+    "$PY" -m pip install --quiet --upgrade pip
+    "$PY" -m pip install --quiet -e "$BACKEND[dev]"
+    if [ -d "$FRONTEND" ] && [ -f "$FRONTEND/package.json" ]; then
+      echo "→ installing frontend dependencies"
+      (cd "$FRONTEND" && npm install --silent)
+    fi
+    [ -f "$ROOT/.env" ] || { cp "$ROOT/.env.example" "$ROOT/.env"; echo "→ created .env from .env.example"; }
+    echo "done. Next: ./run db && ./run migrate"
+    ;;
+
+  db)       $COMPOSE up -d db mailpit ;;
+  down)     $COMPOSE down ;;
+  logs)     $COMPOSE logs -f "$@" ;;
+
+  migrate)  (cd "$BACKEND" && "$PY" -m alembic upgrade head) ;;
+  revision) (cd "$BACKEND" && "$PY" -m alembic revision --autogenerate -m "${1:?message required}") ;;
+  downgrade) (cd "$BACKEND" && "$PY" -m alembic downgrade "${1:--1}") ;;
+
+  api)      (cd "$BACKEND" && "$PY" -m uvicorn knori.main:app --reload --port 8000) ;;
+  worker)   (cd "$BACKEND" && "$PY" -m knori.worker) ;;
+  web)      (cd "$FRONTEND" && npm run dev) ;;
+
+  up)
+    $COMPOSE up -d db mailpit
+    (cd "$BACKEND" && "$PY" -m alembic upgrade head)
+    cat <<'EOF'
+
+Database is up and migrated. Now open three terminals:
+
+  ./run api       → http://localhost:8000  (API + docs at /docs)
+  ./run worker    → background jobs
+  ./run web       → http://localhost:3000  (the app)
+
+Mail sent in dev is captured at http://localhost:8025
+EOF
+    ;;
+
+  test)      (cd "$BACKEND" && "$PY" -m pytest "$@") ;;
+  test-fast) (cd "$BACKEND" && "$PY" -m pytest -m "not integration and not live" "$@") ;;
+  live)      (cd "$BACKEND" && "$PY" -m pytest -m live "$@") ;;
+  web-test)  (cd "$FRONTEND" && npm run test -- "$@") ;;
+  e2e)       (cd "$FRONTEND" && npm run e2e -- "$@") ;;
+
+  lint)
+    (cd "$BACKEND" && "$PY" -m ruff check . && "$PY" -m ruff format --check . && "$PY" -m mypy .)
+    [ -d "$FRONTEND/node_modules" ] && (cd "$FRONTEND" && npm run lint && npx tsc --noEmit) || true
+    ;;
+
+  fmt)
+    (cd "$BACKEND" && "$PY" -m ruff format . && "$PY" -m ruff check --fix .)
+    [ -d "$FRONTEND/node_modules" ] && (cd "$FRONTEND" && npm run fmt) || true
+    ;;
+
+  seed)     (cd "$BACKEND" && "$PY" -m knori.scripts.seed "$@") ;;
+  eval)     (cd "$BACKEND" && "$PY" -m evals.runner "$@") ;;
+  schema)   (cd "$BACKEND" && "$PY" -m knori.scripts.dump_schema) ;;
+
+  *)
+    echo "unknown task: $task"; echo; "$0" help; exit 1 ;;
+esac

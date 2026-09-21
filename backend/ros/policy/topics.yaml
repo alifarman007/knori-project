@@ -1,0 +1,185 @@
+# KnoRI topic taxonomy — taxonomy-v1
+#
+# The controlled vocabulary the extractor and the interpreter must choose from.
+# Every `signals.topic` and `interpretations.topic` value is one of these keys.
+#
+# Shape: `domain.topic`. Keys are stable and never renamed — a rename would orphan
+# every stored row. To retire a topic, mark it `retired: true` and leave the key.
+# Keys must stay under 64 characters (`signals.topic` is String(64)).
+#
+# `sensitive_categories` below must match `SENSITIVE_CATEGORIES` in
+# `ros/persistence/models.py`. The descriptions are the wording the extraction
+# prompt shows the model; the keys are what the database stores.
+
+version: 1
+updated: 2026-09-21
+fallback: other.unclear
+
+domains:
+  work: Work, study and how the user earns or builds
+  decisions: How the user chooses between options
+  routines: The shape of an ordinary day or week
+  health: Body, sleep, food, movement and energy as everyday habits
+  relationships: The people in the user's life, in the user's own words
+  money: Money as a habit and as a feeling
+  learning: Taking in new things
+  creativity: Making things
+  rest: Stopping, playing and recovering
+  emotions: What the user feels and what they do with it
+  values: What the user holds to be right or important
+  other: Escape hatch
+
+topics:
+  - key: work.focus
+    description: How they concentrate, and what breaks their concentration.
+  - key: work.workload
+    description: How much they take on, their pace, and when it tips into too much.
+  - key: work.collaboration
+    description: Working with other people — meetings, handovers, teams.
+  - key: work.ambition
+    description: What they want from work, and where they want it to go.
+  - key: work.recognition
+    description: Being seen, credited or judged for their work.
+  - key: work.boundaries
+    description: Where work stops and the rest of life starts.
+  - key: work.environment
+    description: Where, when and under what conditions they work best.
+
+  - key: decisions.style
+    description: How they arrive at a decision — quickly, slowly, alone, out loud.
+  - key: decisions.risk
+    description: How they treat risk and uncertainty when choosing.
+  - key: decisions.commitment
+    description: Sticking with a choice, changing their mind, or leaving it open.
+  - key: decisions.information
+    description: How much they read, ask or check before deciding.
+  - key: decisions.regret
+    description: How they look back on choices they have already made.
+
+  - key: routines.morning
+    description: How they start the day.
+  - key: routines.evening
+    description: How they end the day.
+  - key: routines.planning
+    description: Lists, calendars, notes and other ways they organise themselves.
+  - key: routines.consistency
+    description: Keeping a routine going, or dropping it.
+  - key: routines.time_of_day
+    description: When in the day or week they have energy, and when they do not.
+
+  - key: health.sleep
+    description: Sleep as a habit — when they sleep, how well, what changes it.
+  - key: health.movement
+    description: Exercise, walking, sport and other physical activity.
+  - key: health.food
+    description: Eating habits — what, when and how they eat.
+  - key: health.energy
+    description: Everyday energy levels and what raises or drains them.
+  - key: health.substances
+    description: Everyday habits around coffee, alcohol, nicotine and similar.
+  - key: health.care
+    description: Looking after themselves — appointments, rest, taking a break.
+
+  - key: relationships.family
+    description: Family, in the user's own words about their own part in it.
+  - key: relationships.friendship
+    description: Friends and how the user keeps or loses touch.
+  - key: relationships.partner
+    description: A partner or dating, as the user describes their own side of it.
+  - key: relationships.conflict
+    description: How the user handles disagreement with someone.
+  - key: relationships.support
+    description: Asking for help, and giving it.
+  - key: relationships.social_energy
+    description: What being around people does to the user.
+
+  - key: money.spending
+    description: What they spend on and how they decide to.
+  - key: money.saving
+    description: Saving, budgeting and holding back.
+  - key: money.security
+    description: How safe or unsafe money feels to them.
+  - key: money.value
+    description: What they think money is for.
+  - key: money.work_pay
+    description: Money in relation to work — pay, rates, asking for more.
+
+  - key: learning.curiosity
+    description: What pulls their attention and what they keep returning to.
+  - key: learning.method
+    description: How they learn — reading, doing, watching, asking.
+  - key: learning.progress
+    description: How they judge whether they are getting better.
+  - key: learning.difficulty
+    description: What they do when something is hard or they are bad at it.
+
+  - key: creativity.making
+    description: Things they make, build or write.
+  - key: creativity.ideas
+    description: How ideas arrive and what they do with them.
+  - key: creativity.finishing
+    description: Starting things versus finishing them.
+  - key: creativity.taste
+    description: What they think is good, and the standards they hold work to.
+  - key: creativity.sharing
+    description: Showing work to other people.
+
+  - key: rest.downtime
+    description: How they rest when nothing is required of them.
+  - key: rest.play
+    description: Fun, games and hobbies with no purpose attached.
+  - key: rest.outdoors
+    description: Being outside, in nature, away from a screen.
+  - key: rest.recovery
+    description: What actually restores them after a hard stretch.
+
+  - key: emotions.stress
+    description: What puts pressure on them and how it shows.
+  - key: emotions.joy
+    description: What lifts them.
+  - key: emotions.frustration
+    description: What irritates them.
+  - key: emotions.worry
+    description: What they turn over in their mind.
+  - key: emotions.self_talk
+    description: How they speak about themselves.
+  - key: emotions.regulation
+    description: What they do with a feeling once they have noticed it.
+
+  - key: values.principles
+    description: Rules they hold themselves to.
+  - key: values.identity
+    description: How they describe who they are.
+  - key: values.purpose
+    description: What they think their effort is for.
+  - key: values.belonging
+    description: Where they feel they fit, and where they do not.
+
+  - key: other.unclear
+    description: Fits none of the topics above. Use rarely; prefer the closest topic.
+
+# Never inferred, never used as supporting evidence (plan §4.5 R6).
+# Keys must match ros/persistence/models.py → SENSITIVE_CATEGORIES.
+sensitive_categories:
+  - key: health
+    description: >-
+      A medical condition, diagnosis, disability, symptom, treatment or medication.
+      Ordinary habits — sleep times, exercise, coffee, what they ate — are NOT this.
+  - key: mental_health
+    description: >-
+      A mental-health condition, diagnosis, therapy, psychiatric medication, self-harm
+      or crisis. Ordinary moods, stress and worry are NOT this.
+  - key: sexual_orientation
+    description: Sexual orientation, gender identity, or a person's sex life.
+  - key: religion
+    description: Religious belief, practice or membership, including having none.
+  - key: ethnicity
+    description: Ethnicity, race, nationality or ancestry.
+  - key: immigration
+    description: Immigration, visa or citizenship status.
+  - key: criminal
+    description: Alleged or actual offences, arrests, convictions or legal proceedings.
+  - key: politics
+    description: Party allegiance, voting, or a position on a contested political issue.
+  - key: financial_distress
+    description: Debt, missed payments, insolvency or serious money trouble.

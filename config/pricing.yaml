@@ -1,0 +1,62 @@
+# List prices in US dollars per million tokens (plan.md §6.6, §6.7).
+#
+# `llm_calls.cost_usd` is always computed from the model in the RESPONSE, which can
+# differ from the one we asked for when the server-side refusal fallback runs.
+#
+# Cache tokens are priced relative to input:
+#   read            0.1x   — and cache reads do not count against the input TPM limit
+#   write, 5m TTL   1.25x
+#   write, 1h TTL   2x     — only worth it above ~2 reads per write
+#
+# Checked against the Anthropic and OpenAI pricing pages on 2026-09-19. The gpt-5.6-sol
+# price is promotional until 2026-11-21 — re-check before relying on it.
+
+defaults:
+  cache_read_multiplier: 0.1
+  cache_write_5m_multiplier: 1.25
+  cache_write_1h_multiplier: 2.0
+
+models:
+  # --- Anthropic ------------------------------------------------------------
+  claude-opus-5:
+    input_per_mtok: 5.00
+    output_per_mtok: 25.00
+
+  claude-sonnet-5:
+    input_per_mtok: 2.00
+    output_per_mtok: 10.00
+
+  # --- OpenAI (alternative provider, selectable per task) -------------------
+  gpt-5.6-sol:
+    input_per_mtok: 4.00
+    output_per_mtok: 20.00
+    # OpenAI caches prefixes automatically; a cached input token is billed at 0.1x
+    # and there is no separate write charge.
+    cache_write_5m_multiplier: 0.0
+    cache_write_1h_multiplier: 0.0
+
+  gpt-5.6-terra:
+    input_per_mtok: 2.00
+    output_per_mtok: 12.00
+    cache_write_5m_multiplier: 0.0
+    cache_write_1h_multiplier: 0.0
+
+  # --- embeddings ------------------------------------------------------------
+  text-embedding-3-small:
+    input_per_mtok: 0.02
+    output_per_mtok: 0.00
+    cache_read_multiplier: 0.0
+    cache_write_5m_multiplier: 0.0
+    cache_write_1h_multiplier: 0.0
+
+  # --- fake provider (LLM_MODE=fake) ----------------------------------------
+  # Priced at zero so a keyless demo never shows an invented bill.
+  fake-embedding-1536:
+    input_per_mtok: 0.00
+    output_per_mtok: 0.00
+    cache_read_multiplier: 0.0
+    cache_write_5m_multiplier: 0.0
+    cache_write_1h_multiplier: 0.0
+
+aliases:
+  gpt-5.6: gpt-5.6-sol

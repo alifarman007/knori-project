@@ -1,6 +1,6 @@
 # CLAUDE.md — KnoRI
 
-**Status: Phase 1 planned (solo + Claude Code, 12 weeks + 2 buffer), no code yet. Current week: none — waiting for the owner's go.**
+**Status: Phase 1 built and running locally (backend + web + engine). 779 backend tests and 40 frontend tests pass; the full loop works against real Postgres with LLM_MODE=fake. Next: a real ANTHROPIC_API_KEY (LLM_MODE=live), then the VPS deploy.**
 Update this line whenever the week or phase changes.
 
 ## Start of every session

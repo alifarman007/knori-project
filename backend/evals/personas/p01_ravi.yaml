@@ -1,0 +1,257 @@
+# Eval persona 01 — two clean patterns, two traps.
+#
+# The baseline case: if this one does not score, nothing else will.
+name: p01_ravi
+summary: Two patterns worth noticing, one single mention and one what-if that are not.
+display_name: Ravi Menon
+preferred_name: Ravi
+email: p01-ravi@knori.eval
+password: knori-eval-1234
+timezone: Europe/London
+now: 2026-09-21T09:00:00Z
+
+settings:
+  max_recognitions_per_day: 2
+
+conversations:
+  - id: c1
+    title: Monday
+    started: 2026-09-14T08:30:00Z
+    messages:
+      - id: r1
+        role: user
+        text: >-
+          morning. I have three hours blocked for the migration script and I am going
+          to protect them this time
+      - role: assistant
+        text: Three hours on the migration. What usually gets in the way?
+      - id: r3
+        role: user
+        after: 4
+        text: >-
+          one message. the first slack message of the day lands and the whole morning
+          goes sideways from there
+        signals:
+          - quote: the first slack message of the day lands and the whole morning goes sideways
+            content: The first message of the day breaks up their planned morning.
+            topic: work.focus
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, morning]
+      - role: assistant
+        text: >-
+          Thanks for telling me. I will keep it as one thing you said, not a
+          conclusion.
+      - id: r5
+        role: user
+        after: 6
+        text: >-
+          I contract for two fintechs, mostly data plumbing. eight years of it now
+        memories:
+          - quote: I contract for two fintechs, mostly data plumbing
+            statement: They contract for two fintech companies doing data work.
+            kind: fact
+            key: fact.work
+      - role: assistant
+        text: Noted. Is today's block still standing?
+      - id: r7
+        role: user
+        after: 9
+        text: >-
+          it is. I wrote tomorrow's list last night before bed, which is the only way
+          I ever start a day knowing what it is
+        signals:
+          - quote: I wrote tomorrow's list last night before bed
+            content: They write the next day's list the night before.
+            topic: routines.planning
+            kind: behavior
+            subject: self
+            polarity: 1
+            strength: 1.0
+            tags: [evening, planning]
+      - role: assistant
+        text: Understood. Anything else on today?
+      - id: r9
+        role: user
+        after: 5
+        text: >-
+          cooked for six people on sunday which I have not done in years. it was good
+          actually
+        signals:
+          - quote: cooked for six people on sunday which I have not done in years
+            content: They cooked for six people on Sunday for the first time in years.
+            topic: relationships.friendship
+            kind: behavior
+            subject: self
+            polarity: 1
+            strength: 1.0
+            tags: [weekend]
+      - role: assistant
+        text: >-
+          That is one evening, and one evening is one evening. Enjoy the three hours.
+
+  - id: c2
+    title: Wednesday
+    started: 2026-09-16T09:10:00Z
+    messages:
+      - id: r11
+        role: user
+        text: >-
+          did not get the migration finished monday in the end, but I am back on it
+      - role: assistant
+        text: What happened to the rest of Monday?
+      - id: r13
+        role: user
+        after: 5
+        text: >-
+          same as always. a question came in at ten past nine and I did not open the
+          editor again until after lunch
+        signals:
+          - quote: a question came in at ten past nine and I did not open the editor again until after lunch
+            content: An early question kept them out of focused work until the afternoon.
+            topic: work.focus
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, morning]
+      - role: assistant
+        text: >-
+          Thank you. That is the second time you have described a morning going that
+          way; I am not drawing anything from it yet.
+      - id: r15
+        role: user
+        after: 6
+        text: >-
+          if I ever went back to a salaried job I would have to give up the blocks
+          entirely, nobody there protects a morning
+        signals:
+          - quote: if I ever went back to a salaried job I would have to give up the blocks
+            content: They imagine losing their morning blocks in a salaried job.
+            topic: work.environment
+            kind: reflection
+            subject: hypothetical
+            polarity: -1
+            strength: 0.3
+            tags: [work]
+      - role: assistant
+        text: Kept as a what-if rather than as something you do.
+      - id: r17
+        role: user
+        after: 7
+        text: >-
+          anyway. list for thursday is already written, I did it over dinner
+        signals:
+          - quote: list for thursday is already written, I did it over dinner
+            content: They wrote the next day's list during the previous evening.
+            topic: routines.planning
+            kind: behavior
+            subject: self
+            polarity: 1
+            strength: 1.0
+            tags: [evening, planning]
+      - role: assistant
+        text: Noted. Good luck with Thursday.
+
+  - id: c3
+    title: Friday
+    started: 2026-09-18T17:45:00Z
+    messages:
+      - id: r19
+        role: user
+        text: >-
+          migration is done. two days later than I said, which is about my usual
+          margin
+      - role: assistant
+        text: Done is done. How was the rest of the week?
+      - id: r21
+        role: user
+        after: 4
+        text: >-
+          thursday was good because I turned everything off until eleven. friday was
+          not
+      - role: assistant
+        text: What was different about Friday?
+      - id: r23
+        role: user
+        after: 5
+        text: >-
+          I opened the laptop and there was a thread waiting and that was the morning
+          gone again
+        signals:
+          - quote: there was a thread waiting and that was the morning gone again
+            content: A waiting thread took over their morning again.
+            topic: work.focus
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work, morning]
+      - role: assistant
+        text: >-
+          Thanks for saying it plainly. Have a good weekend, Ravi.
+
+claims:
+  - id: k1
+    kind: pattern
+    topic: work.focus
+    statement: The user loses a planned morning to the first message that arrives.
+    rationale: Three mentions on three different days, each about the start of the day.
+    evidence: [r3, r13, r23]
+    model_confidence: 0.85
+    card:
+      title: Mornings go to whoever asks first
+      body: >-
+        You seem to hand the start of the day to whatever has arrived overnight,
+        even on the days you had set the time aside. It has come up three times this
+        week, each time about the same part of the morning.
+      explanation: >-
+        Three things you said, on three different days, all about how a planned
+        morning went. That is enough to raise, not enough to be certain.
+
+  - id: k2
+    kind: preference
+    topic: routines.planning
+    statement: The user writes the next day's list the evening before.
+    rationale: Described twice on different days as the thing that starts a day well.
+    evidence: [r7, r17]
+    model_confidence: 0.79
+    card:
+      title: Tomorrow gets written tonight
+      body: >-
+        It looks like the evening before is when the next day takes shape for you.
+        You have mentioned writing it twice this week, both times after the working
+        day had ended.
+      explanation: >-
+        Two things you said on two different days about planning an evening ahead.
+        A small observation, offered lightly.
+
+declined:
+  - about: a claim that the user cooks for friends regularly
+    reason: single_occurrence
+    evidence: [r9]
+  - about: a claim about what the user would do in a salaried job
+    reason: ambiguous
+    evidence: [r15]
+
+expected:
+  - id: g1
+    gist: >-
+      The user loses a planned morning to whatever message arrives first, on
+      several different days.
+    evidence: [r3, r13, r23]
+  - id: g2
+    gist: The user writes the next day's list the evening before, as a habit.
+    evidence: [r7, r17]
+
+traps:
+  - id: t1
+    kind: single_mention
+    about: Cooking for friends, said once and never again.
+    messages: [r9]
+  - id: t2
+    kind: hypothetical
+    about: What they would do if they went back to a salaried job.
+    messages: [r15]

@@ -1,0 +1,293 @@
+# Demo persona — the traps.
+#
+# Three conversations with plenty in them that looks like a pattern and is not:
+# one mention of a real thing, somebody else's words, a hypothetical, a sensitive
+# topic and a piece of venting. The demo shows an empty Recognitions tab and a full
+# ledger at /admin/decisions. Format: see backend/evals/README.md.
+name: mina
+summary: Full of things that look like patterns. Should produce no Recognitions.
+display_name: Mina Haddad
+preferred_name: Mina
+email: mina@knori.demo
+password: knori-demo-1234
+timezone: Europe/London
+now: 2026-09-21T09:00:00Z
+
+settings:
+  max_recognitions_per_day: 2
+  chat_style: direct
+
+conversations:
+  # ---------------------------------------------------------------- Monday 14th
+  - id: c1
+    title: New job, week one
+    started: 2026-09-14T12:30:00Z
+    messages:
+      - id: m1
+        role: user
+        text: >-
+          started at the new place today. lab technician, mostly water samples, which
+          is more interesting than it sounds
+        memories:
+          - quote: lab technician, mostly water samples
+            statement: They work as a lab technician testing water samples.
+            kind: fact
+            key: fact.work
+      - role: assistant
+        text: Congratulations. How was the first day?
+      - id: m3
+        role: user
+        after: 4
+        text: >-
+          fine. I skipped lunch because the induction ran over, which is not something
+          I normally do
+        signals:
+          - quote: I skipped lunch because the induction ran over
+            content: They skipped lunch on their first day because an induction overran.
+            topic: health.food
+            kind: behavior
+            subject: self
+            polarity: -1
+            strength: 1.0
+            tags: [work]
+      - role: assistant
+        text: One overrunning induction. Anything else worth noting from today?
+      - id: m5
+        role: user
+        after: 5
+        text: >-
+          my manager told me on the tour that everyone here burns out by year two and
+          she said it like it was a fun fact
+        signals:
+          - quote: everyone here burns out by year two
+            content: Their manager said that people at the lab burn out by their second year.
+            topic: work.environment
+            kind: statement
+            subject: other
+            polarity: -1
+            strength: 0.6
+            tags: [work]
+      - role: assistant
+        text: >-
+          That is her line rather than yours, so I will keep it as something she said.
+      - id: m7
+        role: user
+        after: 6
+        text: >-
+          appreciated. if I ever ended up like that I would just hand the badge back
+          and go and work on a boat
+        signals:
+          - quote: if I ever ended up like that I would just hand the badge back
+            content: They imagine leaving the job if they ever reached that point.
+            topic: work.ambition
+            kind: statement
+            subject: hypothetical
+            polarity: 0
+            strength: 0.3
+            tags: [work]
+      - role: assistant
+        text: Noted as a what-if rather than a plan.
+      - id: m9
+        role: user
+        after: 3
+        text: >-
+          one more thing, the commute is forty minutes on the bus each way which is
+          the longest I have had
+        memories:
+          - quote: the commute is forty minutes on the bus each way
+            statement: Their commute is forty minutes each way by bus.
+            kind: routine
+            key: routine.commute
+      - role: assistant
+        text: Forty minutes each way. I will remember that.
+      - id: m11b
+        role: user
+        after: 3
+        text: right, off to find a sandwich three hours late. speak tomorrow
+      - role: assistant
+        text: Go and eat something. Talk tomorrow.
+
+  # --------------------------------------------------------------- Tuesday 15th
+  - id: c2
+    title: A long Tuesday
+    started: 2026-09-15T18:10:00Z
+    messages:
+      - id: m11
+        role: user
+        text: >-
+          oh brilliant, another afternoon of the printer eating the sample labels.
+          truly the career I dreamed of
+        signals:
+          - quote: truly the career I dreamed of
+            content: They spoke about their job sarcastically after a frustrating afternoon.
+            topic: emotions.frustration
+            kind: emotion
+            subject: self
+            polarity: -1
+            strength: 0.3
+            tags: [work]
+      - role: assistant
+        text: Sounds like a tedious afternoon. Did the labels get sorted?
+      - id: m13
+        role: user
+        after: 4
+        text: >-
+          eventually. I am fine, it was just a printer. I do not want that read as
+          anything bigger
+      - role: assistant
+        text: >-
+          Understood. A printer is a printer.
+      - id: m15
+        role: user
+        after: 7
+        text: >-
+          while I am here, I started therapy back in june and it has been useful. not
+          a crisis, just saying it because you will see it in my calendar
+        signals:
+          - quote: I started therapy back in june
+            content: They began therapy in June.
+            topic: health.care
+            kind: situation
+            subject: self
+            polarity: 1
+            strength: 1.0
+            sensitive: mental_health
+            tags: [personal]
+        memories:
+          - quote: I started therapy back in june
+            statement: They started therapy in June.
+            kind: event
+            key: event.therapy
+            sensitive: mental_health
+      - role: assistant
+        text: >-
+          Thank you for telling me. I will keep it, and I will never build an
+          observation about you out of it.
+      - id: m17
+        role: user
+        after: 5
+        text: that is the right answer. what else do you do with what I tell you
+      - role: assistant
+        text: >-
+          I hold on to it, and if the same thing comes up across several days I may
+          raise it with the quotes attached. You can correct anything I get wrong.
+      - id: m19
+        role: user
+        after: 4
+        text: fair enough. night
+
+  # ------------------------------------------------------------- Thursday 17th
+  - id: c3
+    title: Quiet week
+    started: 2026-09-17T20:05:00Z
+    messages:
+      - id: m21
+        role: user
+        text: >-
+          quiet one today. samples in, samples out, home by half five for once
+      - role: assistant
+        text: Sounds like the week has settled down.
+      - id: m23
+        role: user
+        after: 5
+        text: >-
+          it has. the label printer went again though and I said some words I will not
+          repeat
+        signals:
+          - quote: the label printer went again though
+            content: The label printer failed again during their shift.
+            topic: emotions.frustration
+            kind: situation
+            subject: self
+            polarity: -1
+            strength: 0.3
+            tags: [work]
+      - role: assistant
+        text: Second time this week for that printer.
+      - id: m25
+        role: user
+        after: 4
+        text: >-
+          my brother reckons I should ask for a new one on day nine of the job. easy
+          for him to say, he has been somewhere twelve years
+        signals:
+          - quote: my brother reckons I should ask for a new one
+            content: Their brother suggested they ask for a new printer.
+            topic: relationships.family
+            kind: statement
+            subject: other
+            polarity: 0
+            strength: 0.6
+            tags: [family]
+      - role: assistant
+        text: That is his suggestion. What do you make of it?
+      - id: m27
+        role: user
+        after: 6
+        text: >-
+          suppose if I were braver I would just ask. anyway it is week two, hardly the
+          moment
+        signals:
+          - quote: suppose if I were braver I would just ask
+            content: They imagine asking for equipment if they felt braver.
+            topic: work.collaboration
+            kind: reflection
+            subject: hypothetical
+            polarity: 0
+            strength: 0.3
+            tags: [work]
+      - role: assistant
+        text: Kept as a what-if.
+      - id: m29
+        role: user
+        after: 5
+        text: >-
+          before I go, does any of this add up to something in your head yet
+      - role: assistant
+        text: >-
+          Not yet. One mention of a thing is one mention, and somebody else's words
+          are theirs. There is nothing I would put in front of you today.
+      - id: m31
+        role: user
+        after: 4
+        text: >-
+          right. weekend. I am not thinking about labels until monday
+      - role: assistant
+        text: Enjoy it, Mina.
+
+claims:
+  # Proposed anyway, so the gates are the thing that stops it: one mention is
+  # never enough, whatever the model thinks (R3).
+  - id: k1
+    kind: pattern
+    topic: health.food
+    statement: The user works through lunch when the day gets busy.
+    rationale: Mentioned once, on the first day of a new job.
+    evidence: [m3]
+    model_confidence: 0.64
+    weight: 1.0
+
+  # Two days and two supports, but both are venting, so the score never gets near
+  # the bar for a pattern (R8).
+  - id: k2
+    kind: pattern
+    topic: emotions.frustration
+    statement: The user is worn down by the equipment at the new job.
+    rationale: Two mentions of the same printer on different days.
+    evidence: [m11, m23]
+    model_confidence: 0.61
+    weight: 1.0
+
+declined:
+  - about: a pattern about the user burning out at work
+    reason: not_self
+    evidence: [m5]
+  - about: a claim that the user wants to leave the job
+    reason: ambiguous
+    evidence: [m7]
+  - about: a claim about the user asking for what they need at work
+    reason: single_occurrence
+    evidence: [m27]
+  - about: a reading about the user's mental health
+    reason: sensitive
+    evidence: [m15]
