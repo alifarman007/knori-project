@@ -170,7 +170,9 @@ export function InspectScreen({ recognitionId }: { recognitionId: Uuid }) {
         ) : null}
       </section>
 
-      {effectId ? <CorrectionEffectPanel feedbackId={effectId} className="mt-8" /> : null}
+      {effectId ? (
+        <CorrectionEffectPanel feedbackId={effectId} recognitionId={card.id} className="mt-8" />
+      ) : null}
 
       <section className="mt-10 border-t border-line pt-6" aria-labelledby="history">
         <h2 id="history" className="flex items-center gap-2 font-serif text-lg text-ink">

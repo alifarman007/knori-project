@@ -402,10 +402,11 @@ export interface RecognitionHistoryEntry {
   id: Uuid;
   /** e.g. "created", "presented", "accepted", "corrected", "withdrawn", "revised". */
   event: string;
+  /** The event written as a sentence by the API: "You corrected this." */
+  label: string;
   actor: "user" | "system";
-  created_at: IsoDateTime;
-  /** A ready-made sentence when the API has one; otherwise the event is worded here. */
-  detail?: string | null;
+  at: IsoDateTime;
+  payload?: Record<string, unknown>;
 }
 
 export interface FeedbackAccepted {

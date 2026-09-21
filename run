@@ -37,6 +37,8 @@ KnoRI tasks
   ./run web          Run the web app on http://localhost:3000
   ./run up           db + migrate, then print how to start api/worker/web
   ./run down         Stop the Docker services
+  ./run stop         Stop the API and worker processes
+  ./run ps           Show which API/worker processes are running
   ./run test         Backend tests (unit + integration)
   ./run test-fast    Backend unit tests only (no database needed)
   ./run web-test     Frontend unit tests
@@ -69,6 +71,27 @@ EOF
 
   db)       $COMPOSE up -d db mailpit ;;
   down)     $COMPOSE down ;;
+
+  # Stop the API and worker started from other terminals. Handy on Windows, where
+  # closing a Git Bash window can leave the python process running — and a second
+  # worker will quietly compete for the same jobs.
+  stop)
+    if command -v powershell >/dev/null 2>&1; then
+      powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { \$_.CommandLine -match 'knori.worker|uvicorn knori' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force }"
+    else
+      pkill -f "knori.worker" 2>/dev/null || true
+      pkill -f "uvicorn knori.main" 2>/dev/null || true
+    fi
+    echo "stopped any running api and worker processes"
+    ;;
+
+  ps)
+    if command -v powershell >/dev/null 2>&1; then
+      powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { \$_.CommandLine -match 'knori.worker|uvicorn knori' } | Select-Object ProcessId,CreationDate | Format-Table -AutoSize"
+    else
+      pgrep -af "knori.worker|uvicorn knori.main" || echo "nothing running"
+    fi
+    ;;
   logs)     $COMPOSE logs -f "$@" ;;
 
   migrate)  (cd "$BACKEND" && "$PY" -m alembic upgrade head) ;;

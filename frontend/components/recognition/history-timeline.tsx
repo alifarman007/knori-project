@@ -60,9 +60,9 @@ export function HistoryTimeline({ recognitionId, className }: HistoryTimelinePro
             ) : null}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-base text-ink">{entry.detail || historyWords(entry.event)}</p>
-            <time dateTime={entry.created_at} className="mt-0.5 block text-xs text-ink-muted">
-              {formatDateTime(entry.created_at)}
+            <p className="text-base text-ink">{entry.label || historyWords(entry.event)}</p>
+            <time dateTime={entry.at} className="mt-0.5 block text-xs text-ink-muted">
+              {formatDateTime(entry.at)}
             </time>
           </div>
         </li>

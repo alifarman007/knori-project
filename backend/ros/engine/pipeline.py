@@ -1347,12 +1347,17 @@ async def _withdraw_stale_cards(
 
 
 def _effect_summary(action: str, changed: int, withdrawn: int) -> str:
+    """One plain sentence. "0 claims re-checked" reads like a failure, so never say it."""
     if action == "accept":
         return "Noted. KnoRI will keep this in mind."
-    parts = [f"{changed} claim{'s' if changed != 1 else ''} re-checked"]
+    if not changed and not withdrawn:
+        return "Saved. Nothing else KnoRI holds about you depended on this."
+    parts = []
+    if changed:
+        parts.append(f"{changed} other claim{'s' if changed != 1 else ''} re-checked")
     if withdrawn:
         parts.append(f"{withdrawn} card{'s' if withdrawn != 1 else ''} taken down")
-    return ", ".join(parts) + "."
+    return ", ".join(parts).capitalize() + "."
 
 
 # ------------------------------------------------------------------------ helpers

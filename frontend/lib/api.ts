@@ -274,11 +274,19 @@ export function errorMessage(error: unknown): string {
  * array. Reading either here means one endpoint changing its mind cannot blank
  * a screen.
  */
+/**
+ * Pull the array out of a list response.
+ *
+ * The API names its list after the thing in it — `items`, `entries`, `assertions`,
+ * `conversations` — so take the first array we find rather than guessing one name
+ * and silently rendering "nothing here" when it is called something else.
+ */
 export function unwrapList<T>(raw: unknown): T[] {
   if (Array.isArray(raw)) return raw as T[];
   if (raw && typeof raw === "object") {
-    const items = (raw as { items?: unknown }).items;
-    if (Array.isArray(items)) return items as T[];
+    for (const value of Object.values(raw as Record<string, unknown>)) {
+      if (Array.isArray(value)) return value as T[];
+    }
   }
   return [];
 }

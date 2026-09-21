@@ -285,11 +285,31 @@ def _recognition_draft(schema: type[BaseModel], text: str, rng: Random) -> dict[
 
 
 def _correction_parse(schema: type[BaseModel], text: str, rng: Random) -> dict[str, Any]:
-    said = sentences(text, limit=1)
-    claim = _clip(said[0], 140) if said else "the described pattern"
+    """Read the person's own correction, not the first sentence of the prompt.
+
+    The prompt puts their words inside `<their_correction>`; using anything else makes
+    the demo quote the card back at them, which reads like the correction was ignored.
+    """
+    _, _, after = text.partition("<their_correction>")
+    spoken, _, _ = after.partition("</their_correction>")
+    spoken = spoken.strip()
+    if not spoken:
+        said = sentences(text, limit=1)
+        spoken = said[0] if said else "the described pattern"
+
+    claim = _clip(spoken, 180)
+    narrows = any(word in claim.lower() for word in (" only ", "when ", "while ", "unless "))
+    if narrows:
+        return {
+            "kind": "amend",
+            "assertion_statement": f"The user says it is narrower than that: {_lower_first(claim)}",
+            "replacement_claim": claim,
+            "contradicted_signal_refs": [],
+            "topic": topic_of(text),
+        }
     return {
         "kind": "deny",
-        "assertion_statement": f"The user says this is not accurate: {_lower_first(claim)}",
+        "assertion_statement": f"The user says this is not how it works: {_lower_first(claim)}",
         "replacement_claim": None,
         "contradicted_signal_refs": refs(text, "S", limit=3),
         "topic": topic_of(text),
@@ -319,13 +339,27 @@ def _conversation_summary(schema: type[BaseModel], text: str, rng: Random) -> di
 
 
 def _profile_build(schema: type[BaseModel], text: str, rng: Random) -> dict[str, Any]:
-    words = keywords(text, limit=4) or ["everyday life"]
-    lines = [f"Has talked about {word}." for word in words]
-    return {
-        "profile_text": "## What you have told KnoRI\n\n"
-        + "\n".join(f"- {line}" for line in lines),
-        "sections": [{"heading": "What you have told KnoRI", "lines": lines}],
-    }
+    """A readable stand-in profile.
+
+    The real one is written by Sonnet. This only has to look like something a person
+    would recognise as being about them: it is what a keyless demo shows on the memory
+    page and in the before/after of a correction.
+    """
+    topics = keywords(text, limit=4) or ["everyday life"]
+    about = [f"Brings up {topic} often enough that KnoRI has noticed." for topic in topics[:2]]
+    matters = [f"Cares how {topic} goes." for topic in topics[2:4]] or [
+        "Would rather be asked than assumed about."
+    ]
+    sections = [
+        {"heading": "About", "lines": about},
+        {"heading": "What matters to them", "lines": matters},
+        {"heading": "How to talk with them", "lines": ["Plainly, and without flattery."]},
+    ]
+    body = "\n\n".join(
+        f"## {section['heading']}\n\n" + "\n".join(f"- {line}" for line in section["lines"])
+        for section in sections
+    )
+    return {"profile_text": body, "sections": sections}
 
 
 def _onboarding_parse(schema: type[BaseModel], text: str, rng: Random) -> dict[str, Any]:

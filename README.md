@@ -66,6 +66,13 @@ Then three terminals:
 ./run web        # http://localhost:3000   (the app)
 ```
 
+`./run ps` shows which API and worker processes are running; `./run stop` ends them.
+Only ever run **one** worker: a second one quietly competes for the same jobs. And do
+not run `npm run build` while `./run web` is up — the production build overwrites the
+dev server's cache and the browser will show
+`__webpack_modules__[moduleId] is not a function`. If that happens, stop the dev
+server, delete `frontend/.next`, and start it again.
+
 Then, once, so the first invite code exists:
 
 ```bash

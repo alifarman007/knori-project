@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import * as React from "react";
 
@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils";
 
 export interface CorrectionEffectPanelProps {
   feedbackId: Uuid;
+  /** The card this correction belongs to, so its card and history refresh when the
+   *  worker finishes. Without it the timeline keeps showing what it read first. */
+  recognitionId?: Uuid;
   className?: string;
 }
 
@@ -35,13 +38,27 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
  * pulled because of it, and the before/after of the profile the chat reasons
  * with — all from `correction_effects`, not from anything the client inferred.
  */
-export function CorrectionEffectPanel({ feedbackId, className }: CorrectionEffectPanelProps) {
+export function CorrectionEffectPanel({
+  feedbackId,
+  recognitionId,
+  className,
+}: CorrectionEffectPanelProps) {
+  const client = useQueryClient();
   const query = useQuery({
     queryKey: keys.correctionEffect(feedbackId),
     queryFn: () => api.effect(feedbackId),
     // The job usually lands within seconds; SSE also invalidates this key.
     refetchInterval: (query) => (query.state.data?.status === "ready" ? false : 3_000),
   });
+
+  // The correction is applied by a background job, so the card and its timeline were
+  // read before any of this happened. Pull them again once the effect is ready.
+  const ready = query.data?.status === "ready";
+  React.useEffect(() => {
+    if (!ready || !recognitionId) return;
+    void client.invalidateQueries({ queryKey: keys.recognition(recognitionId) });
+    void client.invalidateQueries({ queryKey: keys.recognitionHistory(recognitionId) });
+  }, [ready, recognitionId, client]);
 
   const effect: CorrectionEffect | undefined = query.data;
 
