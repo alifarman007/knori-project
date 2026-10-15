@@ -13,6 +13,26 @@ production path — images built by CI, a required domain, real SMTP, encrypted
 backups to object storage — is [deploy/README.md](README.md) with
 `deploy/compose.prod.yml`. Move to it before any real user data goes on the machine.
 
+### What has actually been run, as of 2026-10-15
+
+Worth knowing before you follow it, because it sets your expectations correctly:
+
+* **The stack works.** Both images build (api 393 MB, web 353 MB) and all seven
+  containers have been brought up together, with the migrations applied, `/readyz`
+  green, and login and the live event streams working through Caddy. Every size,
+  port and figure in this file was measured on that run.
+* **But it has only ever been run on a laptop — never on a server.** So the
+  parts of this guide that only a server can exercise have not been: the
+  certificate from Let's Encrypt, the DNS in section 2, `provision_vps.sh`, mail
+  that leaves the machine, and the Docker install in step 1. You are the first
+  person to run those, and the first run may expose something.
+* **The registry path is untouched.** `.github/workflows/images.yml` exists but has
+  never run, because it triggers on a `v*` tag and no tag has been pushed, so GHCR
+  is empty. That does not affect this guide — the demo stack builds from source —
+  but it does block `deploy/compose.prod.yml`, which pulls.
+* **No live model call has been made.** Section 6 is written from the SDK
+  documentation, not from a run against a real key.
+
 ---
 
 ## 1. What you need
@@ -20,7 +40,7 @@ backups to object storage — is [deploy/README.md](README.md) with
 | | Minimum | Recommended | Why |
 | --- | --- | --- | --- |
 | vCPU | 2 | 4 | The Next.js build is the heaviest thing that ever runs here. It takes about a minute on 4 cores and several on 1. After the build, the whole stack idles under 1% CPU. |
-| RAM | 4 GB | 8 GB | Measured idle: api 77 MB, worker 59 MB, Postgres 77 MB, web 39 MB, Caddy 12 MB, mailpit 21 MB — about 285 MB in total. The 4 GB figure is not about running it, it is about **building** it: `npm ci` plus `next build` peaks over 1.5 GB while Postgres is already up. On a 4 GB box, add swap (see below). |
+| RAM | 4 GB | 8 GB | Measured on an idle stack with one seeded account: api 80 MB, worker 63 MB, Postgres 51 MB, web 42 MB, Caddy 12 MB, mailpit 11 MB — about 260 MB in total. Postgres and mailpit grow with use, so treat that as a floor rather than a budget. The 4 GB figure is not about running it, it is about **building** it: `npm ci` plus `next build` peaks over 1.5 GB while Postgres is already up. On a 4 GB box, add swap (see below). |
 | Disk | 20 GB | 40 GB | The images come to about 1.5 GB (api 393 MB, web 353 MB, Postgres 621 MB, Caddy 93 MB, mailpit 51 MB), plus the build cache, plus the database. |
 | OS | Ubuntu 24.04 | Ubuntu 24.04 | The script installs Docker from `get.docker.com`, which supports it. |
 
@@ -79,7 +99,7 @@ ssh root@203.0.113.10
 
 apt-get update && apt-get install -y git
 mkdir -p /srv/knori && cd /srv/knori
-git clone <repository-url> .
+git clone <repository URL> .     # the owner supplies this URL
 git checkout client-demo
 ```
 
@@ -102,7 +122,7 @@ doing at each one:
 | --- | --- |
 | 1 | Installs Docker and curl if they are missing; checks the compose plugin. |
 | 2 | Works out the public URL and whether Caddy should get a certificate. |
-| 3 | Writes `.env.demo` from `.env.example`, generating `SESSION_SECRET` and `POSTGRES_PASSWORD`. Mode 0600. |
+| 3 | Writes `.env.demo` from `.env.example`, generating `SESSION_SECRET`, `POSTGRES_PASSWORD` and a password for the mail viewer. Mode 0600. |
 | 4 | Builds the two images from the source in this clone. |
 | 5 | Starts Postgres and waits for its healthcheck. |
 | 6 | Runs `knori.scripts.check_env` inside the api image, against the environment that image will get. |
@@ -112,8 +132,9 @@ doing at each one:
 
 The first run takes roughly 5–10 minutes, nearly all of it the two image builds.
 
-It finishes by printing the site URL, the API docs URL, the demo login and the invite
-code. **Those printed values are the handover.**
+It finishes by printing the site URL, the API docs URL, the demo login, the **mail
+viewer login** and the invite code. **Those printed values are the handover.** Keep
+the mail login separate from the rest — section 4 says why.
 
 ### What it does not touch
 
@@ -142,24 +163,65 @@ bash deploy/scripts/demo_up.sh --help
 | --- | --- |
 | The app | `https://demo.example.com` (or `http://203.0.113.10`) |
 | Demo login | `alex@knori.demo` / `knori-demo-1234` |
-| Their own account | `/signup`, invite code `KNORI-DEMO`, then click the link in `/mail` |
+| Their own account | `/signup`, invite code `KNORI-DEMO`, then click the verification link in `/mail` — for which they need the mail login below |
 | API documentation | `/docs` — every endpoint, with a *Try it out* button |
 | OpenAPI schema | `/openapi.json` — what the frontend's API client is generated from |
 | Readiness | `/readyz` — database, schema version, worker heartbeat |
 | Version | `/version` — the commit that is running |
-| Mail catcher | `/mail` — every email this install has sent |
+| Mail catcher | `/mail` — every email this install has sent. **Behind a password**: the browser asks for the user and password the install script printed |
 
-The seeded account is the demonstration. It has four conversations over eight days,
-40 messages, 9 signals, 2 Recognitions with 5 provenance rows, and 3 candidates the
-gates declined. Nothing there was inserted by hand: a card exists only because the
-engine decided it should, from quotes that are really in the messages. The declined
-three are readable at `/api/v1/admin/decisions` with the rule that blocked each one.
+The seeded account is the demonstration. The seed prints exactly what it built: four
+conversations over eight days, 40 messages, 9 signals with 0 dropped for a quote that
+could not be found, 1 memory item, 2 interpretations, 2 Recognitions with 5
+provenance rows, and `declined 3` — refusals written to the ledger. Nothing there was
+inserted by hand: a card exists only because the engine decided it should, from quotes
+that are really in the messages. The refusals are readable at
+`/api/v1/admin/decisions` with the rule behind each one.
 
-### Two things to say out loud
+**That endpoint — and every other `/api/v1/admin/*` route — needs an account whose
+role is `admin`.** The seeded account and any account you sign up are ordinary users,
+so those routes answer `403 Admins only.` until you grant the role:
 
-The mail catcher holds verification and password-reset links in the clear, and
-`/docs` is open. Both are deliberate for a review and both are wrong for real users.
-Section 7 removes them.
+```bash
+cd /srv/knori
+kdc exec api python -m knori.scripts.promote alex@knori.demo
+kdc exec api python -m knori.scripts.promote --list
+```
+
+(`kdc` is the alias from section 5; locally the same thing is `./run admin
+alex@knori.demo`.) Sign out and in again afterwards. The change is recorded in the
+audit log.
+
+### Three things to say out loud
+
+**1. The mail viewer is the master key to this box, and it is protected
+accordingly.** `/mail` shows every email the install has sent, verification and
+**password-reset links included, in the clear**. On a demo that is published with its
+login printed in a document, an unprotected mailbox is an account takeover waiting to
+happen: anyone who can reach it types the demo address into "forgot password", reads
+the reset link out of the mailbox, and owns the account — and the same trick works on
+any account on the machine, including one your own team creates.
+
+So Caddy puts HTTP basic authentication in front of `/mail`. The install script
+generates the password, hashes it with `caddy hash-password` and gives Caddy only the
+hash; the plaintext is printed once at the end of the run and kept in `.env.demo`.
+The default user is `mail`. Two consequences worth knowing:
+
+* **Share the site address and the demo login. Do not share the mail login** unless
+  someone needs to verify their own new account, and treat it as an admin
+  credential when you do.
+* If `KNORI_MAIL_USER` or `KNORI_MAIL_HASH` is missing from `.env.demo`, the route
+  answers **404** and mailpit is not reachable at all. That is deliberate: a stack
+  brought up without credentials hides the mailbox rather than serving it open. If
+  `/mail` gives you a 404 instead of a password prompt, that is why — re-run
+  `demo_up.sh`, which fills both in.
+
+**2. `/docs` and `/openapi.json` are open**, because `ENV=dev`. That is deliberate
+for a review: it is how your engineer reads the API without asking us anything.
+
+**3. Neither of those is acceptable for real users.** Section 7 removes them. The
+password on `/mail` makes the demo safe to publish; it does not make a mail catcher
+a mail server.
 
 ---
 
@@ -263,9 +325,15 @@ names a model, so moving one task to GPT is a line in that file or one environme
 variable (`KNORI_ROUTE__chat_reply=openai:gpt-5.6-sol:medium`).
 
 **Spending is capped before you need to think about it**, in `config/limits.yaml`:
-$3.00 per user per day, $15.00 for the whole install. At 80% of a user's cap chat
-drops to low effort; at 100% it says so and the interpret job waits for tomorrow. Read
-the running total at `/api/v1/admin/costs`.
+**$2.00 per user per day while beta caps are active, which they are by default
+(`beta_caps_active: true`), or $3.00 once they are switched off — and $15.00 for the
+whole install either way.** At 80% of a user's cap chat drops to low effort; at 100%
+it says so and the interpret job waits for tomorrow. Read the running total at
+`/api/v1/admin/costs`.
+
+No cap has ever been tested against a real bill, because no live call has been made
+from this code. The first day with a key is the day to watch `/api/v1/admin/costs`
+rather than trust it.
 
 To go back to the fake provider, set `LLM_MODE=fake` and recreate the two services
 again. Nothing already stored is affected.
@@ -281,9 +349,12 @@ production. Each is one edit.
    invite code. Set `ENV=prod` and both stop: `/docs` and `/openapi.json` return 404,
    and you create invite codes through `POST /api/v1/admin/invites` as an admin
    instead. Recreate api and worker afterwards.
-2. **The mail catcher.** Delete the `mailpit` service from `deploy/compose.demo.yml`
-   and the `handle /mail*` block from `deploy/Caddyfile.demo`, then put real `SMTP_*`
-   values in `.env.demo`, with SPF, DKIM and DMARC set up for the domain.
+2. **The mail catcher.** The password in front of it (section 4) makes it safe enough
+   to publish for a review; it is still a box that holds every password-reset link in
+   the clear. Delete the `mailpit` service from `deploy/compose.demo.yml` and the
+   `handle /mail*` block from `deploy/Caddyfile.demo`, then put real `SMTP_*` values
+   in `.env.demo`, with SPF, DKIM and DMARC set up for the domain. Until those DNS
+   records exist, verification mail will land in spam.
 3. **`FIRST_INVITE_CODE=KNORI-DEMO`.** Guessable, and printed in this file. Change it,
    or move to `ENV=prod` where it is not used.
 4. **No backups.** Move to `deploy/compose.prod.yml` (`deploy/README.md`), which runs
@@ -399,11 +470,11 @@ Seven containers, all defined in `deploy/compose.demo.yml`.
 | --- | --- | --- |
 | `caddy` | The only way in. Terminates TLS, routes `/api/*` and the ops paths to the API and everything else to the web app. | 80, 443 |
 | `web` | The Next.js app, built to a standalone server. | no |
-| `api` | FastAPI. 47 endpoints. | no |
+| `api` | FastAPI. 47 paths, 57 operations. | no |
 | `worker` | Background jobs: extraction, the Recognition engine, mail, alerts. Same image as `api`, different command. | no |
 | `migrate` | `alembic upgrade head`, once per deploy, then exits. api and worker wait for it to exit 0. | no |
 | `db` | PostgreSQL 16 with pgvector. **The only container holding data**, in the `pgdata` volume. The job queue is a table in it; there is no Redis. | 127.0.0.1:55433 |
-| `mailpit` | Demo-only mail catcher. | no |
+| `mailpit` | Demo-only mail catcher, published at `/mail` behind basic authentication. | no |
 
 Keeping the API and the app on one origin behind Caddy is what lets the session stay
 an httpOnly, same-site cookie. Two SSE routes — the chat reply and the live event feed

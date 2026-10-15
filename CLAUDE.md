@@ -27,7 +27,7 @@ KnoRI is a chat product. It remembers what a user says (**Memory**). With enough
 Windows 11. Run `make` targets from Git Bash (the Bash tool), never PowerShell. Docker Desktop with the WSL2 backend must be running (compose and testcontainers need it).
 
 ## Stack (fixed)
-Python 3.12 · FastAPI · async SQLAlchemy 2 + Alembic · Pydantic v2 · PostgreSQL 16 + pgvector. Postgres is the **only** stateful service; it also runs the job queue and events. No Redis, no Celery. Next.js 15 App Router + TypeScript strict + Tailwind + shadcn/ui + TanStack Query · Docker Compose on one VPS behind Caddy · GitHub Actions; CI builds the images and the VPS only pulls.
+Python 3.12 · FastAPI · async SQLAlchemy 2 + Alembic · Pydantic v2 · PostgreSQL 16 + pgvector. Postgres is the **only** stateful service; it also runs the job queue and events. No Redis, no Celery. Next.js 15 App Router + TypeScript strict + Tailwind 4 + TanStack Query + our own UI primitives (no third-party component library) · Docker Compose on one VPS behind Caddy · GitHub Actions; CI builds the images and the VPS only pulls.
 
 LLM: Anthropic API via the official `anthropic` Python SDK (1.x, async). `claude-opus-5` for chat and all Recognition reasoning; `claude-sonnet-5` for background work. OpenAI GPT via the official `openai` SDK, selectable per task in config. Embeddings: OpenAI `text-embedding-3-small` (1536). No Haiku, no Voyage in Phase 1.
 

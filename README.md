@@ -199,7 +199,7 @@ The full account is in **[docs/RECOGNITION.md](docs/RECOGNITION.md)**.
 ## Testing and tasks
 
 ```bash
-./run test        # backend: 678 tests. 34 need Postgres and skip without it
+./run test        # backend: 779 tests. 40 need Postgres and skip without it
 ./run test-fast   # backend unit tests only, no database
 ./run web-test    # frontend unit tests (40)
 ./run e2e         # Playwright, against the fake provider
@@ -212,9 +212,9 @@ The full account is in **[docs/RECOGNITION.md](docs/RECOGNITION.md)**.
 ./run help        # every task
 ```
 
-With Postgres stopped the backend suite reports **644 passed, 34 skipped**; the 34 are
-the integration tests and they skip with a message telling you to start it. `make`
-mirrors every task for Linux and CI.
+With Postgres running the backend suite reports **779 passed**. Stop it and the
+integration tests skip with a message telling you to start it, rather than failing.
+`make` mirrors the main tasks for Linux and CI.
 
 `./run live` and `./run eval` are the two that cost money. Confirm the spend before
 running either. See [docs/PROGRESS.md](docs/PROGRESS.md) for what is not finished.
