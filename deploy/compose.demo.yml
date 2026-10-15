@@ -1,0 +1,199 @@
+# KnoRI — the demo stack. Everything runs in containers and everything is built on
+# the machine it runs on, so nothing has to exist in a container registry first.
+#
+# This is the file deploy/scripts/demo_up.sh drives. To run it by hand:
+#
+#   cd /srv/knori
+#   docker compose -f deploy/compose.demo.yml --env-file .env.demo up -d --build
+#
+# --env-file matters twice over: it supplies the ${...} values this file substitutes
+# (ports, the Postgres password, the site address) and it is also the file each
+# service reads its own environment from. Leave it out and compose will stop with
+# "POSTGRES_PASSWORD is not set".
+#
+# Two differences from deploy/compose.prod.yml, which stays the file for a real
+# deployment:
+#   - it builds from source here instead of pulling images that CI pushed;
+#   - it serves plain HTTP on a bare IP when no domain is set (see Caddyfile.demo).
+#
+# The project name and the env file are both "demo", so this stack can run next to a
+# development stack from deploy/compose.yml without colliding on either.
+
+name: knori-demo
+
+# ---------------------------------------------------------------- shared fragments
+
+# One image for the API, the worker and the migration step (plan.md §3.1). Compose
+# builds it once because all three name the same context, args and image.
+x-api-build: &api-build
+  context: ../backend
+  dockerfile: Dockerfile
+  additional_contexts:
+    # knori.core.config and ros.llm.cost read config/*.yaml from the repository root,
+    # so the backend image needs that directory as well as backend/ itself.
+    config: ../config
+  args:
+    GIT_SHA: ${GIT_SHA:-}
+
+# Set here rather than left to .env.demo, because these three can only be got wrong.
+# Values in `environment` win over `env_file`, so a stale host-style DATABASE_URL
+# copied in from .env.example cannot reach a container.
+x-api-env: &api-env
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-knori}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set - run deploy/scripts/demo_up.sh, or pass --env-file .env.demo}@db:5432/${POSTGRES_DB:-knori}
+  SMTP_HOST: mailpit
+  SMTP_PORT: "1025"
+  SMTP_TLS: "false"
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
+
+services:
+  # ------------------------------------------------------------------ front door
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      # 80 and 443 on the server. Override both to run this on a machine where
+      # something already has them, as the local verification run does.
+      - "${KNORI_HTTP_PORT:-80}:80"
+      - "${KNORI_HTTPS_PORT:-443}:443"
+    environment:
+      # A hostname here turns on automatic HTTPS; ":80" serves plain HTTP.
+      KNORI_SITE_ADDRESS: ${KNORI_SITE_ADDRESS:-:80}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.invalid}
+    volumes:
+      - ./Caddyfile.demo:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+    logging: *logging
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ application
+  # Runs once per `up`, before api and worker, and exits. Both of them wait for it
+  # to exit 0, so a failed migration stops the deploy instead of being served.
+  migrate:
+    build: *api-build
+    image: knori-demo-api:local
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    env_file: [../.env.demo]
+    environment: *api-env
+    depends_on:
+      db:
+        condition: service_healthy
+    logging: *logging
+    restart: "no"
+
+  api:
+    build: *api-build
+    image: knori-demo-api:local
+    env_file: [../.env.demo]
+    environment: *api-env
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # The image's own HEALTHCHECK calls /healthz; caddy waits on it.
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    logging: *logging
+    restart: unless-stopped
+
+  worker:
+    build: *api-build
+    image: knori-demo-api:local
+    command: ["python", "-m", "knori.worker"]
+    env_file: [../.env.demo]
+    environment: *api-env
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # Same image as api, but it serves no HTTP, so the image's healthcheck would
+    # fail forever. /readyz checks the worker instead, through its heartbeat row.
+    healthcheck:
+      disable: true
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    logging: *logging
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* values are compiled into the browser bundle, so they are
+        # build arguments. Changing the public URL means rebuilding this image.
+        NEXT_PUBLIC_SITE_URL: ${KNORI_PUBLIC_URL:-}
+        KNORI_API_ORIGIN: http://api:8000
+    image: knori-demo-web:local
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    # Not published: the only way in is through caddy, which keeps the API and the
+    # app on one origin so the session cookie stays first-party.
+    depends_on:
+      api:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+    logging: *logging
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ data
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-knori}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set - run deploy/scripts/demo_up.sh, or pass --env-file .env.demo}
+      POSTGRES_DB: ${POSTGRES_DB:-knori}
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      # Bound to loopback on purpose: reachable over an SSH tunnel for a reviewer who
+      # wants to read the schema, not reachable from the internet.
+      - "127.0.0.1:${KNORI_DB_PORT:-55433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-knori} -d ${POSTGRES_DB:-knori}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    shm_size: 256mb
+    logging: *logging
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ demo only
+  # Catches every email the install sends, so an account can be verified without an
+  # SMTP provider. Reachable at <site>/mail . It holds verification and password
+  # reset links in the clear, so delete this service and the /mail* block in
+  # Caddyfile.demo before any real user data goes on the machine.
+  mailpit:
+    image: axllent/mailpit:latest
+    environment:
+      MP_WEBROOT: /mail
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    logging: *logging
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

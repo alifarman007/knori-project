@@ -1,0 +1,98 @@
+# KnoRI demo reverse proxy. Used by deploy/compose.demo.yml.
+#
+# One file, two modes, switched by KNORI_SITE_ADDRESS:
+#
+#   KNORI_SITE_ADDRESS=demo.example.com   a real hostname. Caddy gets and renews a
+#                                         Let's Encrypt certificate by itself, and
+#                                         redirects http to https.
+#   KNORI_SITE_ADDRESS=:80                no hostname. Plain HTTP on port 80, which
+#                                         is all you can have on a bare IP address.
+#
+# deploy/scripts/demo_up.sh writes the right value from KNORI_DOMAIN. The default
+# below is the IP mode, so a missing variable degrades to plain HTTP rather than to
+# a Caddy that will not start.
+#
+# This is deploy/Caddyfile.demo, not deploy/Caddyfile: the production one requires a
+# domain and sets HSTS unconditionally, which is wrong for an IP-only demo box.
+{
+	# No admin API on a public machine.
+	admin off
+	email {$ACME_EMAIL:admin@example.invalid}
+}
+
+{$KNORI_SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# Only meaningful once there is a certificate. Browsers ignore it on plain HTTP,
+	# so it is safe to send in both modes.
+	@https expression {scheme} == "https"
+	header @https Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	# Chat replies and the live event feed are text/event-stream. Without these two
+	# settings Caddy buffers the body and the tokens arrive in one lump at the end,
+	# or the connection is cut at the default read timeout.
+	#   POST /api/v1/conversations/{id}/messages
+	#   GET  /api/v1/events
+	@stream path /api/v1/conversations/*/messages /api/v1/events
+	handle @stream {
+		reverse_proxy api:8000 {
+			flush_interval -1
+			transport http {
+				read_timeout 0
+			}
+		}
+	}
+
+	handle /api/* {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy api:8000
+	}
+
+	# Served by the API at the root, not under /api: the ops probes, the version
+	# stamp, and the interactive API documentation a reviewer needs. /docs and
+	# /openapi.json answer only when ENV is not prod (knori/main.py).
+	handle /healthz {
+		reverse_proxy api:8000
+	}
+	handle /readyz {
+		reverse_proxy api:8000
+	}
+	handle /version {
+		reverse_proxy api:8000
+	}
+	handle /docs* {
+		reverse_proxy api:8000
+	}
+	handle /openapi.json {
+		reverse_proxy api:8000
+	}
+
+	# Demo-only: every email the install sends, caught locally so an account can be
+	# verified without an SMTP provider. Remove this block and the mailpit service
+	# from compose.demo.yml before putting real users on this machine.
+	handle /mail* {
+		reverse_proxy mailpit:8025
+	}
+
+	# Everything else is the Next.js app.
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 20mb
+			roll_keep 5
+		}
+	}
+}

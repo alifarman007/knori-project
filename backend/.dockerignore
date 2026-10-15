@@ -1,0 +1,40 @@
+# Build context for backend/Dockerfile. The context is this directory, so these
+# patterns are relative to backend/.
+#
+# Two jobs: keep the context small (the local virtualenv alone is larger than the
+# finished image) and keep secrets out of it.
+
+# Secrets — never in a build context, never in an image layer.
+.env
+.env.*
+
+# Local virtualenv and tool caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+
+# Eval output and database dumps
+evals/reports/*
+!evals/reports/.gitkeep
+*.dump
+*.sqlite3
+
+# Not needed inside the image
+Dockerfile
+.dockerignore
+.DS_Store
+Thumbs.db
+
+# tests/ and evals/ are kept on purpose: they are small (about 2 MB together) and
+# an independent reviewer can then install the dev extras inside the container and
+# run the suite against the same code the demo is serving.
