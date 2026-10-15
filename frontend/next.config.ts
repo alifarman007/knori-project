@@ -4,6 +4,9 @@ const apiOrigin = process.env.KNORI_API_ORIGIN ?? "http://localhost:8000";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Emits .next/standalone — a self-contained server the Docker image can run
+  // without node_modules. Only affects `next build`, never `next dev`.
+  output: "standalone",
   poweredByHeader: false,
   typedRoutes: false,
   eslint: {

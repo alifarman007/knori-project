@@ -20,7 +20,7 @@ KnoRI is a chat app that gets to know you. It remembers what you say (**Memory**
 |---|---|---|
 | Backend | Python 3.12, FastAPI, async SQLAlchemy 2 + Alembic, Pydantic v2 | Owner's choice |
 | Database | PostgreSQL 16 + `pgvector` (image `pgvector/pgvector:pg16`). **The only stateful service.** It is also the job queue and the event bus. No Redis, no broker. | One thing to back up, restore, hand over |
-| Frontend | Next.js 15 (App Router, TypeScript strict), Tailwind, shadcn/ui, TanStack Query. Mobile = responsive web. | Owner's choice; no native app in Phase 1 (confirm with Sway, §13) |
+| Frontend | Next.js 15 (App Router, TypeScript strict), Tailwind 4, TanStack Query. **No third-party UI library**: the twenty primitives are written in this repo (see ADR-0006). Mobile = responsive web. | Owner's choice; no native app in Phase 1 (confirm with Sway, §13) |
 | LLM primary | Anthropic API via the official `anthropic` Python SDK (1.x). **`claude-opus-5`** for chat + all Recognition reasoning. **`claude-sonnet-5`** for background work. No Haiku in Phase 1. | Owner's choice |
 | LLM alternative | OpenAI GPT via the official `openai` SDK, selectable **per task by config**, no product-code change | Owner's requirement |
 | Embeddings | OpenAI `text-embedding-3-small` (1536 dims). Anthropic has no embeddings API. Provider protocol allows Voyage later; no Voyage adapter now. Every similarity cutoff is stored **per embedding model** in `config/thresholds.yaml`. | The OpenAI key exists anyway |
@@ -461,7 +461,7 @@ OpenAPI JSON is exported to `docs/API.md` in CI; the frontend client (`lib/api.t
 
 ## 8. Frontend
 
-Next.js App Router, TypeScript strict, Tailwind + shadcn/ui, TanStack Query, `useStreamedMessage` (fetch + ReadableStream — EventSource cannot POST), `useUserEvents` (EventSource on `/events`), responsive from 360 px, **app shell with nav**: left rail on desktop / bottom tab bar on mobile (Chat · Recognitions [badge] · Memory · Settings), 16 px gutters, light/dark via `prefers-color-scheme`.
+Next.js App Router, TypeScript strict, Tailwind 4, own UI primitives (no third-party component library), TanStack Query, `useStreamedMessage` (fetch + ReadableStream — EventSource cannot POST), `useUserEvents` (EventSource on `/events`), responsive from 360 px, **app shell with nav**: left rail on desktop / bottom tab bar on mobile (Chat · Recognitions [badge] · Memory · Settings), 16 px gutters, light/dark via `prefers-color-scheme`.
 
 | Route | Outcome | What's on it | Week |
 |---|---|---|---|

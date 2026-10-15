@@ -46,6 +46,7 @@ KnoRI tasks
   ./run lint         ruff + mypy + eslint + tsc
   ./run fmt          Format Python and TypeScript
   ./run seed         Load demo data (./run seed alex)
+  ./run admin        Grant the admin role (./run admin you@example.com, or --list)
   ./run eval         Recognition quality evals (spends real API money)
   ./run schema       Regenerate docs/schema.sql
   ./run revision "message"   Create a new Alembic migration
@@ -134,6 +135,7 @@ EOF
     ;;
 
   seed)     (cd "$BACKEND" && "$PY" -m knori.scripts.seed "$@") ;;
+  admin)    (cd "$BACKEND" && "$PY" -m knori.scripts.promote "$@") ;;
   eval)     (cd "$BACKEND" && "$PY" -m evals.runner "$@") ;;
   schema)   (cd "$BACKEND" && "$PY" -m knori.scripts.dump_schema) ;;
 

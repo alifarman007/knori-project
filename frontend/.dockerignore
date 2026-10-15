@@ -1,0 +1,36 @@
+# Build context for frontend/Dockerfile. The context is this directory, so these
+# patterns are relative to frontend/.
+#
+# node_modules is ~520 MB and .next is a local dev cache; both are rebuilt inside the
+# image, and sending them would make every build slow and the image wrong.
+
+# Secrets
+.env
+.env.local
+.env.*
+!.env.local.example
+
+# Installed and generated
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+
+# Test output
+test-results/
+playwright-report/
+.playwright/
+
+# Not needed inside the image
+Dockerfile
+.dockerignore
+e2e/
+README.md
+.DS_Store
+Thumbs.db
+
+# tests/, vitest.*, eslint.config.mjs and tsconfig.json stay: `next build` lints
+# app, components, lib and tests (see next.config.ts), so dropping them breaks the
+# build rather than shrinking it.
