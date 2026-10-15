@@ -165,6 +165,23 @@ env_get() {
 	KEY="$1" awk 'index($0, ENVIRON["KEY"] "=") == 1 { print substr($0, length(ENVIRON["KEY"]) + 2); exit }' "$ENV_FILE"
 }
 
+# Hashed by the caddy image itself, so the result is exactly what its basic_auth
+# directive expects. The password goes in on stdin: not in the command line, where
+# `ps` would show it to every user on the machine, and not in the environment, which
+# sudo strips anyway.
+caddy_hash_password() {
+	printf '%s\n' "$1" \
+		| $DOCKER_SUDO docker run --rm -i caddy:2-alpine caddy hash-password \
+		| tr -d '\r\n'
+}
+
+# compose interpolates the values it reads from --env-file, so a bcrypt hash stored
+# literally reaches the container mangled ($2a$14$abc... arrives as $2a$14). Doubling
+# every '$' makes compose hand over the real hash.
+escape_dollars() {
+	printf '%s' "$1" | sed 's/\$/$$/g'
+}
+
 # Replace the first KEY= line, or append one. awk rather than sed: the values are
 # URLs and secrets, and sed would need every delimiter escaped.
 env_set() {
@@ -362,6 +379,29 @@ if [ -n "$ACME_EMAIL_IN" ]; then
 	env_set ACME_EMAIL "$ACME_EMAIL_IN"
 fi
 
+# The mail catcher is published at <site>/mail, and it holds the verification and
+# password-reset links for every account on this box in the clear. Open, it is a way
+# to take the demo account over, so Caddy puts HTTP basic authentication in front of
+# it. Caddy only ever gets the bcrypt hash; the password is kept here as well so a
+# second run prints the same credentials instead of locking you out.
+MAIL_USER="$(env_get KNORI_MAIL_USER)"; [ -n "$MAIL_USER" ] || MAIL_USER="mail"
+env_set KNORI_MAIL_USER "$MAIL_USER"
+
+if [ -z "$(env_get KNORI_MAIL_PASSWORD)" ] || [ -z "$(env_get KNORI_MAIL_HASH)" ]; then
+	info "generating a password for the mail viewer at $PUBLIC_URL/mail ..."
+	MAIL_PASSWORD="$(random_hex 12)"
+	MAIL_HASH="$(caddy_hash_password "$MAIL_PASSWORD")"
+	case "$MAIL_HASH" in
+		'$2'*) ;;
+		*) die "could not hash the mail viewer password: 'docker run --rm -i caddy:2-alpine caddy hash-password' returned '${MAIL_HASH:-nothing}'.
+The same image has to run anyway for the site itself, so fix that first — most often it is a registry the machine cannot reach." ;;
+	esac
+	env_set KNORI_MAIL_PASSWORD "$MAIL_PASSWORD"
+	env_set KNORI_MAIL_HASH     "$(escape_dollars "$MAIL_HASH")"
+	MAIL_HASH=""
+fi
+MAIL_PASSWORD="$(env_get KNORI_MAIL_PASSWORD)"
+
 GIT_SHA_VALUE=""
 if have git && [ -d .git ]; then
 	GIT_SHA_VALUE="$(git rev-parse --short HEAD 2>/dev/null || true)"
@@ -511,6 +551,14 @@ if [ -n "$DEMO_LOGIN" ]; then
   ${BOLD}demo login${OFF}      $DEMO_LOGIN
 EOF
 fi
+
+cat <<EOF
+
+  ${BOLD}mail login${OFF}      $MAIL_USER / $MAIL_PASSWORD
+                  ${DIM}browser prompt on $PUBLIC_URL/mail . Anyone who can read that
+                  mailbox can reset any password on this box, so this is a separate
+                  credential: share the site and the demo login, not this one.${OFF}
+EOF
 
 cat <<EOF
 

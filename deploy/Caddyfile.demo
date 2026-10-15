@@ -78,10 +78,35 @@
 	}
 
 	# Demo-only: every email the install sends, caught locally so an account can be
-	# verified without an SMTP provider. Remove this block and the mailpit service
-	# from compose.demo.yml before putting real users on this machine.
+	# verified without an SMTP provider. It is published behind HTTP basic
+	# authentication, because the mailbox holds verification and password-reset links
+	# in the clear: anyone who could read it could reset the demo account's password
+	# and take the account over.
+	#
+	# deploy/scripts/demo_up.sh generates the password, hashes it with
+	# `caddy hash-password`, and passes the user and the bcrypt hash in through the
+	# two variables below. The plaintext never reaches this container.
+	#
+	# Fail closed: with either variable empty the route answers 404 and mailpit is
+	# never reached, so a stack brought up without credentials hides the mailbox
+	# rather than serving it open. `route` keeps that check ahead of basic_auth,
+	# which Caddy would otherwise sort first. basic_auth needs a parseable hash for
+	# the config to load at all, so KNORI_MAIL_HASH falls back to a bcrypt hash of a
+	# random string that was generated and discarded: nothing can authenticate
+	# against it.
+	#
+	# Remove this block and the mailpit service from compose.demo.yml before putting
+	# real users on this machine.
 	handle /mail* {
-		reverse_proxy mailpit:8025
+		route {
+			@unconfigured expression `{env.KNORI_MAIL_USER} == "" || {env.KNORI_MAIL_HASH} == ""`
+			respond @unconfigured "the mail viewer is not enabled" 404
+
+			basic_auth {
+				{$KNORI_MAIL_USER:mail} {$KNORI_MAIL_HASH:$2a$14$HFFAfDBykpJOYi0WApYFXuUfXLPxWIfAn0SFi6QjoxX/DjAyywjwi}
+			}
+			reverse_proxy mailpit:8025
+		}
 	}
 
 	# Everything else is the Next.js app.

@@ -47,12 +47,48 @@ a deploy turns into an afternoon.
 | An S3-compatible bucket | backups that survive the server | `S3_*` |
 | A mailbox for alerts | where the `alerts` job writes | `OPS_EMAIL` |
 
-> **One gap to know about.** The `api` and `web` images are meant to be built by
-> GitHub Actions and pushed to the registry; the server never builds them. At the time
-> this file was written the repository has no Dockerfile for either one and no
-> workflow that pushes them, so there is nothing in the registry to pull yet. Until
-> that exists, step 7 will fail with "manifest unknown". Everything else in this guide
-> works today.
+### Where the `api` and `web` images come from
+
+There are two ways to get them onto the server, and they need different things from
+the list above. Pick one before you start.
+
+**Build them on the server.** `deploy/compose.demo.yml` builds both images from the
+clone that is already on the machine, so nothing has to exist in a registry first.
+One command does the whole install — Docker, secrets, migrations, a seeded demo
+account:
+
+```bash
+sudo bash deploy/scripts/demo_up.sh --domain knori.example.com --email ops@example.com
+```
+
+This needs no GitHub token and no registry, and it skips step 7 below. The cost is a
+few minutes of CPU on the server for every deploy, and no `backup` container. It is
+the path the client demo runs on, and the only one that has been run end to end. It
+has its own guide: `deploy/DEMO-VPS.md`.
+
+**Build them in CI and pull by tag.** `deploy/compose.prod.yml` — the file the rest of
+this guide uses — pulls images rather than building them, which is what you want on a
+4 GB box where a Next.js build would compete with Postgres for memory.
+`.github/workflows/images.yml` is the other half: it builds `backend/Dockerfile` and
+`frontend/Dockerfile` and pushes them to GHCR, on a `v*` tag or by hand from the
+Actions tab.
+
+```bash
+git tag -a v0.1.0 -m "Phase 1" && git push origin v0.1.0
+```
+
+It publishes `ghcr.io/<owner>/<repo>/api` and `ghcr.io/<owner>/<repo>/web`, each
+tagged with the version (`0.1.0`), `<major>.<minor>` (`0.1`), the tag itself
+(`v0.1.0`), the short commit SHA with a prefix (`sha-1a2b3c4`) and `latest`. Whichever
+you pick goes in `.env` as `KNORI_TAG`, with the two names as `KNORI_IMAGE_API` and
+`KNORI_IMAGE_WEB`.
+
+> **This path has not been exercised.** Both Dockerfiles and the workflow are in the
+> repository and the demo builds from the same two Dockerfiles, so they work. But no
+> `v*` tag has been pushed yet, the workflow has therefore never run, and nothing has
+> been published to GHCR. Until the first tag, step 7 fails with "manifest unknown":
+> an empty registry, not a missing build. Tag once and watch that workflow finish
+> before you plan a deploy around it.
 
 ---
 

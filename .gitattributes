@@ -1,0 +1,22 @@
+# Line endings.
+#
+# This repository is written on Windows and run on Linux, so the checkout must not
+# decide the line endings. With core.autocrlf=true — the default of the Git for
+# Windows installer — a clone would otherwise get CRLF in every text file, and a
+# shell script with CRLF line endings fails on the server with
+#
+#   deploy/scripts/demo_up.sh: line 2: $'\r': command not found
+#
+# Everything below keeps the file LF in the working tree as well as in the
+# repository, on every platform.
+
+# Normalise to LF in the repository for anything Git sees as text. Binary files are
+# detected and left alone.
+* text=auto
+
+# Read by a Linux shell, a container entrypoint, or Docker.
+*.sh        text eol=lf
+run         text eol=lf
+Dockerfile* text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf

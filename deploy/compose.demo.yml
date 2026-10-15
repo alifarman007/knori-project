@@ -63,6 +63,14 @@ services:
       # A hostname here turns on automatic HTTPS; ":80" serves plain HTTP.
       KNORI_SITE_ADDRESS: ${KNORI_SITE_ADDRESS:-:80}
       ACME_EMAIL: ${ACME_EMAIL:-admin@example.invalid}
+      # HTTP basic authentication for /mail, written by demo_up.sh. Empty means the
+      # Caddyfile does not route /mail at all, so the mailbox is never open.
+      #
+      # The hash is bcrypt, so it is full of '$'. In .env.demo each one is written
+      # doubled ('$$'), because compose interpolates the values it reads from an
+      # --env-file and would otherwise eat them; a single '$' arrives here.
+      KNORI_MAIL_USER: ${KNORI_MAIL_USER:-}
+      KNORI_MAIL_HASH: ${KNORI_MAIL_HASH:-}
     volumes:
       - ./Caddyfile.demo:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -180,9 +188,11 @@ services:
 
   # ------------------------------------------------------------------ demo only
   # Catches every email the install sends, so an account can be verified without an
-  # SMTP provider. Reachable at <site>/mail . It holds verification and password
-  # reset links in the clear, so delete this service and the /mail* block in
-  # Caddyfile.demo before any real user data goes on the machine.
+  # SMTP provider. Reachable at <site>/mail behind HTTP basic authentication (see
+  # the /mail* block in Caddyfile.demo); not published on a host port, so Caddy is
+  # the only way to it. It holds verification and password reset links in the clear,
+  # so delete this service and that block before any real user data goes on the
+  # machine.
   mailpit:
     image: axllent/mailpit:latest
     environment:
